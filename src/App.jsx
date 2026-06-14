@@ -5,7 +5,7 @@ import {
   Search, Trash2, Download, LogOut, Menu, Bell, ChevronRight, 
   Plus, Minus, Info, AlertTriangle, Check, RefreshCcw, LogIn,
   ClipboardList, Stethoscope, ArrowRight, UserCheck, Shield, HelpCircle,
-  Volume2, VolumeX, Mic, MicOff, QrCode, MapPin, AlertOctagon, Heart, Lock, BookOpen, Sparkles, Flame
+  Volume2, VolumeX, Mic, MicOff, QrCode, MapPin, AlertOctagon, Heart, Lock, BookOpen, Sparkles, Flame, Pill
 } from 'lucide-react';
 import { db, DOCTORS, DOCTOR_PATIENTS, MEDICINE_KB, FIRST_AID_GUIDES, EDUCATION_ARTICLES, MOCK_HOSPITALS } from './mockDb';
 import { getChatResponse, checkSymptoms, analyzeMedicalReport, searchMedicines, calculateHealthRisk, getAiPatientSummary } from './aiEngine';
@@ -956,7 +956,10 @@ export default function App() {
                         color: 'var(--text-primary)',
                         display: 'flex',
                         alignItems: 'center',
-                        gap: '0.5rem'
+                        gap: '0.5rem',
+                        border: 'none',
+                        background: 'transparent',
+                        cursor: 'pointer'
                       }}
                       className="profile-menu-item"
                     >
@@ -974,12 +977,36 @@ export default function App() {
                         color: 'var(--text-primary)',
                         display: 'flex',
                         alignItems: 'center',
-                        gap: '0.5rem'
+                        gap: '0.5rem',
+                        border: 'none',
+                        background: 'transparent',
+                        cursor: 'pointer'
+                      }}
+                      className="profile-menu-item"
+                    >
+                      <User size={14} />
+                      Profile Card
+                    </button>
+                    <button 
+                      onClick={() => { setShowProfileMenu(false); navigateToView('settings'); }}
+                      style={{
+                        width: '100%',
+                        padding: '0.6rem 0.8rem',
+                        borderRadius: '6px',
+                        textAlign: 'left',
+                        fontSize: '0.85rem',
+                        color: 'var(--text-primary)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.5rem',
+                        border: 'none',
+                        background: 'transparent',
+                        cursor: 'pointer'
                       }}
                       className="profile-menu-item"
                     >
                       <Settings size={14} />
-                      Profile Settings
+                      Settings
                     </button>
                     <div style={{ borderTop: '1px solid var(--border-color)', margin: '0.25rem 0' }} />
                     <button 
@@ -993,7 +1020,10 @@ export default function App() {
                         color: 'var(--accent-rose)',
                         display: 'flex',
                         alignItems: 'center',
-                        gap: '0.5rem'
+                        gap: '0.5rem',
+                        border: 'none',
+                        background: 'transparent',
+                        cursor: 'pointer'
                       }}
                       className="profile-menu-item"
                     >
@@ -1039,7 +1069,7 @@ export default function App() {
                 style={{ width: '100%', justifyContent: sidebarCollapsed ? 'center' : 'flex-start' }}
               >
                 <Activity size={20} />
-                {!sidebarCollapsed && <span>Health Dashboard</span>}
+                {!sidebarCollapsed && <span>Dashboard</span>}
               </button>
               
               <button 
@@ -1048,43 +1078,16 @@ export default function App() {
                 style={{ width: '100%', justifyContent: sidebarCollapsed ? 'center' : 'flex-start' }}
               >
                 <MessageSquare size={20} />
-                {!sidebarCollapsed && <span>AI Chat Companion</span>}
+                {!sidebarCollapsed && <span>AI Chat Assistant</span>}
               </button>
 
               <button 
-                onClick={() => navigateToView('symptoms')}
-                className={`sidebar-link ${view === 'symptoms' ? 'active' : ''}`}
+                onClick={() => navigateToView('tracker')}
+                className={`sidebar-link ${view === 'tracker' ? 'active' : ''}`}
                 style={{ width: '100%', justifyContent: sidebarCollapsed ? 'center' : 'flex-start' }}
               >
-                <Stethoscope size={20} />
-                {!sidebarCollapsed && <span>Symptom Checker</span>}
-              </button>
-
-              <button 
-                onClick={() => navigateToView('reports')}
-                className={`sidebar-link ${view === 'reports' ? 'active' : ''}`}
-                style={{ width: '100%', justifyContent: sidebarCollapsed ? 'center' : 'flex-start' }}
-              >
-                <FileText size={20} />
-                {!sidebarCollapsed && <span>Report Analyzer</span>}
-              </button>
-
-              <button 
-                onClick={() => navigateToView('medicines')}
-                className={`sidebar-link ${view === 'medicines' ? 'active' : ''}`}
-                style={{ width: '100%', justifyContent: sidebarCollapsed ? 'center' : 'flex-start' }}
-              >
-                <Sparkles size={20} color="var(--accent-teal)" />
-                {!sidebarCollapsed && <span>Medicine Lookup</span>}
-              </button>
-
-              <button 
-                onClick={() => navigateToView('risk')}
-                className={`sidebar-link ${view === 'risk' ? 'active' : ''}`}
-                style={{ width: '100%', justifyContent: sidebarCollapsed ? 'center' : 'flex-start' }}
-              >
-                <ClipboardList size={20} />
-                {!sidebarCollapsed && <span>Health Assessment</span>}
+                <HeartPulse size={20} />
+                {!sidebarCollapsed && <span>Health Tracker</span>}
               </button>
 
               <button 
@@ -1094,24 +1097,6 @@ export default function App() {
               >
                 <Calendar size={20} />
                 {!sidebarCollapsed && <span>Appointments</span>}
-              </button>
-
-              <button 
-                onClick={() => navigateToView('emergency')}
-                className={`sidebar-link ${view === 'emergency' ? 'active' : ''}`}
-                style={{ width: '100%', justifyContent: sidebarCollapsed ? 'center' : 'flex-start', color: 'var(--accent-rose)' }}
-              >
-                <ShieldAlert size={20} color="var(--accent-rose)" />
-                {!sidebarCollapsed && <span>Emergency SOS</span>}
-              </button>
-
-              <button 
-                onClick={() => navigateToView('education')}
-                className={`sidebar-link ${view === 'education' ? 'active' : ''}`}
-                style={{ width: '100%', justifyContent: sidebarCollapsed ? 'center' : 'flex-start' }}
-              >
-                <BookOpen size={20} />
-                {!sidebarCollapsed && <span>Health Library</span>}
               </button>
 
               {profile.subscriptionPlan === 'clinic' && (
@@ -1130,8 +1115,17 @@ export default function App() {
                 className={`sidebar-link ${view === 'profile' ? 'active' : ''}`}
                 style={{ width: '100%', justifyContent: sidebarCollapsed ? 'center' : 'flex-start' }}
               >
+                <User size={20} />
+                {!sidebarCollapsed && <span>Profile</span>}
+              </button>
+
+              <button 
+                onClick={() => navigateToView('settings')}
+                className={`sidebar-link ${view === 'settings' ? 'active' : ''}`}
+                style={{ width: '100%', justifyContent: sidebarCollapsed ? 'center' : 'flex-start' }}
+              >
                 <Settings size={20} />
-                {!sidebarCollapsed && <span>Profile Settings</span>}
+                {!sidebarCollapsed && <span>Settings</span>}
               </button>
             </div>
 
@@ -1652,113 +1646,364 @@ export default function App() {
               </div>
             </div>
           )}
-
           {/* --- HEALTH DASHBOARD VIEW --- */}
           {view === 'dashboard' && (
             <div className="animate-fade-in" style={{ padding: '2rem', display: 'flex', flexDirection: 'column', gap: '2rem' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
-                <div>
-                  <h2 style={{ fontSize: '1.8rem', fontFamily: 'var(--font-display)', fontWeight: '700' }}>Health & Wellness Hub</h2>
-                  <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Track daily metrics, calculate wellness scores, and review logs.</p>
-                </div>
-                <div style={{ display: 'flex', gap: '0.75rem' }}>
-                  <button onClick={() => setView('chat')} style={{ padding: '0.6rem 1.2rem', borderRadius: '8px', backgroundColor: 'var(--accent-teal-glow)', color: 'var(--accent-teal)', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <MessageSquare size={16} />
-                    Consult AI Copilot
-                  </button>
-                  <button onClick={() => setView('symptoms')} style={{ padding: '0.6rem 1.2rem', borderRadius: '8px', backgroundColor: 'var(--bg-secondary)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <Stethoscope size={16} color="var(--accent-blue)" />
-                    Symptom Checker
-                  </button>
-                </div>
-              </div>
-
-              {/* OVERVIEW SCORE & STATS BANNER */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '1.5rem' }}>
-                {/* Score Widget */}
-                <div className="health-card" style={{ display: 'flex', alignItems: 'center', gap: '2rem', minHeight: '160px' }}>
-                  <div style={{ position: 'relative', width: '90px', height: '90px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <svg width="90" height="90" viewBox="0 0 36 36" style={{ transform: 'rotate(-90deg)' }}>
-                      <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="#e2e8f0" strokeWidth="3" />
-                      <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="var(--accent-teal)" strokeDasharray={`${wellnessScore}, 100`} strokeWidth="3" strokeLinecap="round" style={{ transition: 'stroke-dasharray 0.4s' }} />
-                    </svg>
-                    <div style={{ position: 'absolute', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                      <span style={{ fontSize: '1.4rem', fontWeight: '800', fontFamily: 'var(--font-display)', color: 'var(--text-primary)' }}>{wellnessScore}</span>
-                      <span style={{ fontSize: '0.55rem', color: 'var(--text-muted)', fontWeight: '700', textTransform: 'uppercase' }}>Wellness</span>
-                    </div>
-                  </div>
-                  
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                    <h3 style={{ fontSize: '1.25rem' }}>Daily Wellness Index</h3>
-                    <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', lineHeight: '1.4' }}>
-                      {wellnessScore >= 80 ? 'Excellent! You are maintaining healthy hydration, rest, and mobility levels today.' : 
-                       wellnessScore >= 50 ? 'Steady balance. Try increasing water intake or performing light exercises to hit your peak.' : 
-                       'Take a moment to record details and follow guidelines to boost hydration and rest.'}
+              
+              {/* TOP SECTION: Welcome & Profile Summary Grid */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '1.5rem', alignItems: 'stretch' }}>
+                
+                {/* Welcome Message Card */}
+                <div className="health-card" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: '1rem', minHeight: '160px', background: 'linear-gradient(135deg, #ffffff 0%, var(--bg-primary) 100%)' }}>
+                  <div>
+                    <h2 style={{ fontSize: '2rem', fontFamily: 'var(--font-display)', fontWeight: '800', letterSpacing: '-0.02em', color: 'var(--text-primary)' }}>
+                      Hello, {profile.name.split(' ')[0] || 'User'}!
+                    </h2>
+                    <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginTop: '0.5rem', lineHeight: '1.5' }}>
+                      Welcome back to your personalized healthcare dashboard. All health indexes are monitored and calculated locally.
                     </p>
                   </div>
+                  <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: '600' }}>
+                    📅 {new Date().toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+                  </span>
                 </div>
 
-                {/* Profile quick overview */}
+                {/* Patient Profile Summary Card */}
                 <div className="health-card" style={{ display: 'flex', flexDirection: 'column', justifyItems: 'space-between', gap: '0.75rem' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                    <h4 style={{ fontSize: '0.95rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Patient Medical History</h4>
+                    <h4 style={{ fontSize: '0.95rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Patient Parameters</h4>
                     <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{profile.gender}, {profile.age} yrs</span>
                   </div>
-                  <div>
-                    <p style={{ fontSize: '0.85rem', color: 'var(--text-primary)', marginBottom: '0.25rem' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
+                    <p style={{ fontSize: '0.85rem', color: 'var(--text-primary)' }}>
+                      <strong>Blood Group:</strong> {profile.bloodGroup || 'O-Positive'}
+                    </p>
+                    <p style={{ fontSize: '0.85rem', color: 'var(--text-primary)' }}>
                       <strong>Allergies:</strong> <span style={{ color: 'var(--accent-rose)', fontWeight: '500' }}>{profile.allergies || 'None reported'}</span>
                     </p>
                     <p style={{ fontSize: '0.85rem', color: 'var(--text-primary)' }}>
-                      <strong>Conditions:</strong> {profile.medicalHistory || 'No diagnosed chronic issues'}
+                      <strong>Medical History:</strong> {profile.medicalHistory || 'No chronic issues'}
                     </p>
                   </div>
                   <div style={{ marginTop: 'auto', borderTop: '1px solid var(--border-color)', paddingTop: '0.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
                     <span>Emergency Contact: {profile.emergencyContact ? profile.emergencyContact.split(' - ')[0] : 'None'}</span>
-                    <button onClick={() => setView('profile')} style={{ color: 'var(--accent-teal)', fontWeight: '600' }}>Edit</button>
+                    <button onClick={() => navigateToView('profile')} style={{ color: 'var(--accent-teal)', fontWeight: '600', border: 'none', background: 'transparent', cursor: 'pointer' }}>Edit</button>
                   </div>
+                </div>
+
+                {/* Digital Health summary Card */}
+                <div className="health-card" style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', padding: '1rem 1.5rem', cursor: 'pointer' }} onClick={() => navigateToView('profile')}>
+                  <div style={{ width: '48px', height: '48px', borderRadius: '12px', background: 'linear-gradient(135deg, var(--accent-teal), var(--accent-blue))', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    <QrCode size={24} color="#ffffff" />
+                  </div>
+                  <div>
+                    <h4 style={{ fontSize: '1rem', color: 'var(--text-primary)' }}>Health Summary Passport</h4>
+                    <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.25rem', lineHeight: '1.4' }}>
+                      Expand Digital Health Passport card, verify scan configurations, or print credentials paper records.
+                    </p>
+                  </div>
+                </div>
+
+              </div>
+
+              {/* MIDDLE SECTION: Health Widgets & AI Tools */}
+              
+              {/* 1. Health Widgets */}
+              <div>
+                <h3 style={{ fontSize: '1.2rem', marginBottom: '1rem' }}>Daily Wellness Widgets</h3>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1.5rem' }}>
+                  
+                  {/* Wellness Score Widget */}
+                  <div className="health-card" style={{ display: 'flex', alignItems: 'center', gap: '1.25rem', justifyContent: 'center' }}>
+                    <div style={{ position: 'relative', width: '80px', height: '80px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                      <svg width="80" height="80" viewBox="0 0 36 36" style={{ transform: 'rotate(-90deg)' }}>
+                        <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="#e2e8f0" strokeWidth="3.5" />
+                        <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="var(--accent-teal)" strokeDasharray={`${wellnessScore}, 100`} strokeWidth="3.5" strokeLinecap="round" style={{ transition: 'stroke-dasharray 0.4s' }} />
+                      </svg>
+                      <div style={{ position: 'absolute', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                        <span style={{ fontSize: '1.3rem', fontWeight: '800', fontFamily: 'var(--font-display)', color: 'var(--text-primary)' }}>{wellnessScore}</span>
+                        <span style={{ fontSize: '0.5rem', color: 'var(--text-muted)', fontWeight: '700', textTransform: 'uppercase' }}>Index</span>
+                      </div>
+                    </div>
+                    <div>
+                      <h4 style={{ fontSize: '0.95rem' }}>Wellness Score</h4>
+                      <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>Calculated daily target index status.</p>
+                    </div>
+                  </div>
+
+                  {/* Sleep Tracker Card */}
+                  <div className="health-card" style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                        <Moon size={16} color="var(--accent-teal)" />
+                        <span style={{ fontSize: '0.85rem', fontWeight: '600' }}>Sleep duration</span>
+                      </div>
+                      <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Goal: 8h</span>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
+                      <span style={{ fontSize: '1.8rem', fontWeight: '800' }}>{todayLogs.sleep} <span style={{ fontSize: '0.85rem', fontWeight: '500', color: 'var(--text-secondary)' }}>hrs</span></span>
+                      <div style={{ display: 'flex', gap: '0.25rem' }}>
+                        <button onClick={() => adjustTracker('sleep', -0.5, 0, 24)} style={{ padding: '0.25rem 0.5rem', borderRadius: '4px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-tertiary)', cursor: 'pointer' }}>-</button>
+                        <button onClick={() => adjustTracker('sleep', 0.5, 0, 24)} style={{ padding: '0.25rem 0.5rem', borderRadius: '4px', backgroundColor: 'var(--accent-teal)', color: '#ffffff', border: 'none', cursor: 'pointer' }}>+</button>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Water Tracker Card */}
+                  <div className="health-card" style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                        <Droplet size={16} color="var(--accent-blue)" />
+                        <span style={{ fontSize: '0.85rem', fontWeight: '600' }}>Water intake</span>
+                      </div>
+                      <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Goal: 2L</span>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
+                      <span style={{ fontSize: '1.8rem', fontWeight: '800' }}>{todayLogs.water} <span style={{ fontSize: '0.85rem', fontWeight: '500', color: 'var(--text-secondary)' }}>ml</span></span>
+                      <div style={{ display: 'flex', gap: '0.25rem' }}>
+                        <button onClick={() => adjustTracker('water', -250, 0)} style={{ padding: '0.25rem 0.5rem', borderRadius: '4px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-tertiary)', cursor: 'pointer' }}>-</button>
+                        <button onClick={() => adjustTracker('water', 250, 0)} style={{ padding: '0.25rem 0.5rem', borderRadius: '4px', backgroundColor: 'var(--accent-blue)', color: '#ffffff', border: 'none', cursor: 'pointer' }}>+</button>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Exercise Tracker Card */}
+                  <div className="health-card" style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                        <Dumbbell size={16} color="var(--accent-emerald)" />
+                        <span style={{ fontSize: '0.85rem', fontWeight: '600' }}>Exercise Time</span>
+                      </div>
+                      <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Goal: 30m</span>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
+                      <span style={{ fontSize: '1.8rem', fontWeight: '800' }}>{todayLogs.exercise} <span style={{ fontSize: '0.85rem', fontWeight: '500', color: 'var(--text-secondary)' }}>mins</span></span>
+                      <div style={{ display: 'flex', gap: '0.25rem' }}>
+                        <button onClick={() => adjustTracker('exercise', -5, 0)} style={{ padding: '0.25rem 0.5rem', borderRadius: '4px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-tertiary)', cursor: 'pointer' }}>-</button>
+                        <button onClick={() => adjustTracker('exercise', 5, 0)} style={{ padding: '0.25rem 0.5rem', borderRadius: '4px', backgroundColor: 'var(--accent-emerald)', color: '#ffffff', border: 'none', cursor: 'pointer' }}>+</button>
+                      </div>
+                    </div>
+                  </div>
+
                 </div>
               </div>
 
-              {/* AI Health Insights Panel */}
-              <div className="health-card animate-fade-in" style={{
-                background: 'linear-gradient(135deg, #ffffff 0%, var(--bg-primary) 100%)',
-                borderLeft: '5px solid var(--accent-teal)'
-              }}>
-                <h3 style={{ fontSize: '1.1rem', marginBottom: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <Sparkles size={18} color="var(--accent-teal)" />
-                  AI Health Insights & Reminders
-                </h3>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                  {generateDashboardInsights().map((insight, idx) => (
-                    <div 
-                      key={idx} 
-                      style={{
-                        display: 'flex',
-                        gap: '0.75rem',
-                        alignItems: 'flex-start',
-                        padding: '0.65rem 0.85rem',
-                        borderRadius: '8px',
-                        backgroundColor: insight.type === 'warning' ? 'rgba(225, 29, 72, 0.05)' : insight.type === 'success' ? 'rgba(22, 163, 74, 0.05)' : 'rgba(2, 132, 199, 0.05)',
-                        border: insight.type === 'warning' ? '1px solid rgba(225, 29, 72, 0.15)' : insight.type === 'success' ? '1px solid rgba(22, 163, 74, 0.15)' : '1px solid rgba(2, 132, 199, 0.15)'
-                      }}
-                    >
-                      <div style={{ marginTop: '2px' }}>
-                        {insight.icon === 'droplet' ? <Droplet size={14} color="var(--accent-blue)" /> : 
-                         insight.icon === 'moon' ? <Moon size={14} color="var(--accent-teal)" /> : 
-                         <Activity size={14} color="var(--accent-emerald)" />}
+              {/* 2. AI Health Tools Cards */}
+              <div>
+                <h3 style={{ fontSize: '1.2rem', marginBottom: '1rem' }}>AI Health Tools</h3>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '1.5rem' }}>
+                  
+                  {/* Medicine Assistant Card */}
+                  <div className="health-card" style={{ display: 'flex', flexDirection: 'column', gap: '1rem', justifyItems: 'space-between' }}>
+                    <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+                      <div style={{ width: '40px', height: '40px', borderRadius: '8px', backgroundColor: 'var(--accent-teal-glow)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <Pill size={20} color="var(--accent-teal)" />
                       </div>
-                      <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', lineHeight: '1.4', margin: 0 }}>
-                        {insight.text}
-                      </p>
+                      <h4 style={{ fontSize: '1.1rem' }}>Medicine Assistant</h4>
                     </div>
-                  ))}
+                    <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: '1.5', margin: 0 }}>
+                      Search medicines, understand uses, and explain prescriptions
+                    </p>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginTop: 'auto', paddingTop: '0.5rem' }}>
+                      <button 
+                        onClick={() => { navigateToView('chat'); setShowMedSearchPanel(true); }}
+                        style={{ padding: '0.5rem 1rem', borderRadius: '8px', backgroundColor: 'var(--accent-teal)', color: '#ffffff', fontSize: '0.8rem', fontWeight: '600', border: 'none', cursor: 'pointer', textAlign: 'center' }}
+                      >
+                        Search Medicine
+                      </button>
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
+                        <button 
+                          onClick={() => { navigateToView('chat'); setShowMedSearchPanel(true); setShowAttachmentDropdown(true); }}
+                          style={{ padding: '0.5rem', borderRadius: '8px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-tertiary)', fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: '500', cursor: 'pointer', textAlign: 'center' }}
+                        >
+                          Upload Medicine Image
+                        </button>
+                        <button 
+                          onClick={() => { navigateToView('chat'); handleSendChatMessage("Explain my prescription"); }}
+                          style={{ padding: '0.5rem', borderRadius: '8px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-tertiary)', fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: '500', cursor: 'pointer', textAlign: 'center' }}
+                        >
+                          Explain Prescription
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Medical Report Analyzer Card */}
+                  <div className="health-card" style={{ display: 'flex', flexDirection: 'column', gap: '1rem', justifyItems: 'space-between' }}>
+                    <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+                      <div style={{ width: '40px', height: '40px', borderRadius: '8px', backgroundColor: 'var(--accent-blue-glow)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <FileText size={20} color="var(--accent-blue)" />
+                      </div>
+                      <h4 style={{ fontSize: '1.1rem' }}>Medical Report Analyzer</h4>
+                    </div>
+                    <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: '1.5', margin: 0 }}>
+                      Upload medical reports and get AI-powered explanations
+                    </p>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginTop: 'auto', paddingTop: '0.5rem' }}>
+                      <button 
+                        onClick={() => navigateToView('reports')}
+                        style={{ padding: '0.5rem 1rem', borderRadius: '8px', backgroundColor: 'var(--accent-blue)', color: '#ffffff', fontSize: '0.8rem', fontWeight: '600', border: 'none', cursor: 'pointer', textAlign: 'center' }}
+                      >
+                        Upload Report
+                      </button>
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
+                        <button 
+                          onClick={() => navigateToView('reports')}
+                          style={{ padding: '0.5rem', borderRadius: '8px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-tertiary)', fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: '500', cursor: 'pointer', textAlign: 'center' }}
+                        >
+                          Analyze Report
+                        </button>
+                        <button 
+                          onClick={() => {
+                            navigateToView('reports');
+                            setTimeout(() => {
+                              document.getElementById('reports-history')?.scrollIntoView({ behavior: 'smooth' });
+                            }, 500);
+                          }}
+                          style={{ padding: '0.5rem', borderRadius: '8px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-tertiary)', fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: '500', cursor: 'pointer', textAlign: 'center' }}
+                        >
+                          View Report History
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Voice Assistant Card */}
+                  <div className="health-card" style={{ display: 'flex', flexDirection: 'column', gap: '1rem', justifyItems: 'space-between' }}>
+                    <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+                      <div style={{ width: '40px', height: '40px', borderRadius: '8px', backgroundColor: 'var(--accent-teal-glow)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <Mic size={20} color="var(--accent-teal)" />
+                      </div>
+                      <h4 style={{ fontSize: '1.1rem' }}>Voice Assistant</h4>
+                    </div>
+                    <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: '1.5', margin: 0 }}>
+                      Speak to your HealthAI companion in English, Hindi, or Hinglish. Customize speed rates and voice genders.
+                    </p>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginTop: 'auto', paddingTop: '0.5rem' }}>
+                      <button 
+                        onClick={() => { navigateToView('chat'); setTimeout(() => { toggleListening(); }, 500); }}
+                        style={{ padding: '0.5rem 1rem', borderRadius: '8px', backgroundColor: 'var(--accent-teal)', color: '#ffffff', fontSize: '0.8rem', fontWeight: '600', border: 'none', cursor: 'pointer', textAlign: 'center' }}
+                      >
+                        Speak Now
+                      </button>
+                      <button 
+                        onClick={() => navigateToView('settings')}
+                        style={{ padding: '0.5rem', borderRadius: '8px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-tertiary)', fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: '500', cursor: 'pointer', textAlign: 'center' }}
+                      >
+                        Voice Settings
+                      </button>
+                    </div>
+                  </div>
+
                 </div>
+              </div>
+
+              {/* 3. More Resources & Safety Tools Section */}
+              <div className="health-card" style={{ padding: '1.5rem', backgroundColor: 'var(--bg-tertiary)' }}>
+                <h4 style={{ fontSize: '0.95rem', fontWeight: '700', marginBottom: '0.75rem' }}>More Clinical Resources & Emergency Tools</h4>
+                <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
+                  <button onClick={() => navigateToView('symptoms')} style={{ padding: '0.5rem 1rem', borderRadius: '20px', border: '1px solid var(--border-color)', backgroundColor: '#ffffff', fontSize: '0.8rem', color: 'var(--text-secondary)', fontWeight: '600', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                    <Stethoscope size={14} color="var(--accent-blue)" /> Symptom Checker
+                  </button>
+                  <button onClick={() => navigateToView('risk')} style={{ padding: '0.5rem 1rem', borderRadius: '20px', border: '1px solid var(--border-color)', backgroundColor: '#ffffff', fontSize: '0.8rem', color: 'var(--text-secondary)', fontWeight: '600', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                    <ClipboardList size={14} color="var(--accent-teal)" /> Health Assessment
+                  </button>
+                  <button onClick={() => navigateToView('education')} style={{ padding: '0.5rem 1rem', borderRadius: '20px', border: '1px solid var(--border-color)', backgroundColor: '#ffffff', fontSize: '0.8rem', color: 'var(--text-secondary)', fontWeight: '600', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                    <BookOpen size={14} color="var(--accent-blue)" /> Health Library
+                  </button>
+                  <button onClick={() => navigateToView('emergency')} style={{ padding: '0.5rem 1rem', borderRadius: '20px', border: '1px solid rgba(225, 29, 72, 0.2)', backgroundColor: 'var(--accent-rose-glow)', fontSize: '0.8rem', color: 'var(--accent-rose)', fontWeight: '700', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                    <ShieldAlert size={14} color="var(--accent-rose)" /> Emergency SOS (First Aid)
+                  </button>
+                </div>
+              </div>
+
+              {/* BOTTOM SECTION: Recent Conversations & Upcoming Appointments */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))', gap: '1.5rem' }}>
+                
+                {/* Recent AI Conversations */}
+                <div className="health-card" style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <h3 style={{ fontSize: '1.1rem' }}>Recent AI Consultations</h3>
+                    <button onClick={() => navigateToView('chat')} style={{ fontSize: '0.8rem', color: 'var(--accent-teal)', fontWeight: '600', border: 'none', background: 'transparent', cursor: 'pointer' }}>New Chat</button>
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', flex: 1 }}>
+                    {chats.length === 0 ? (
+                      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '1.5rem', border: '1.5px dashed var(--border-color)', borderRadius: '12px', gap: '0.5rem' }}>
+                        <MessageSquare size={20} color="var(--text-muted)" />
+                        <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', textAlign: 'center' }}>No recent consultations. Connect with your assistant to begin.</p>
+                      </div>
+                    ) : (
+                      chats.slice(0, 3).map(c => (
+                        <div 
+                          key={c.id} 
+                          onClick={() => { setActiveChatId(c.id); navigateToView('chat'); }}
+                          style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.75rem 1rem', borderRadius: '8px', backgroundColor: 'var(--bg-tertiary)', cursor: 'pointer', transition: 'background-color 0.15s' }}
+                          className="recent-chat-item"
+                        >
+                          <MessageSquare size={16} color="var(--accent-teal)" />
+                          <span style={{ fontSize: '0.85rem', fontWeight: '500', color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '240px' }}>
+                            {c.title || "Active Consultation Session"}
+                          </span>
+                          <span style={{ marginLeft: 'auto', fontSize: '0.7rem', color: 'var(--text-muted)' }}>
+                            {c.messages && c.messages.length > 0 ? c.messages[c.messages.length - 1].timestamp ? new Date(c.messages[c.messages.length - 1].timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Just now' : ''}
+                          </span>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+
+                {/* Upcoming Appointments */}
+                <div className="health-card" style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <h3 style={{ fontSize: '1.1rem' }}>Upcoming Appointments</h3>
+                    <button onClick={() => navigateToView('appointments')} style={{ fontSize: '0.8rem', color: 'var(--accent-teal)', fontWeight: '600', border: 'none', background: 'transparent', cursor: 'pointer' }}>Manage</button>
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', flex: 1 }}>
+                    {bookedAppointments.length === 0 ? (
+                      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '1.5rem', border: '1.5px dashed var(--border-color)', borderRadius: '12px', gap: '0.5rem' }}>
+                        <Calendar size={20} color="var(--text-muted)" />
+                        <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>No upcoming appointments scheduled.</p>
+                        <button onClick={() => navigateToView('appointments')} style={{ fontSize: '0.8rem', color: 'var(--accent-teal)', fontWeight: '600', border: 'none', background: 'transparent', cursor: 'pointer' }}>Schedule Consultation</button>
+                      </div>
+                    ) : (
+                      bookedAppointments.slice(0, 3).map(apt => (
+                        <div key={apt.id} style={{ display: 'flex', gap: '1rem', padding: '0.75rem 1rem', borderRadius: '12px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-card-hover)', alignItems: 'center' }}>
+                          <div style={{ width: '36px', height: '36px', borderRadius: '8px', backgroundColor: 'var(--accent-blue-glow)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                            <Stethoscope color="var(--accent-blue)" size={18} />
+                          </div>
+                          <div>
+                            <h4 style={{ fontSize: '0.85rem', color: 'var(--text-primary)' }}>{apt.doctorName}</h4>
+                            <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>{apt.doctorSpecialty}</p>
+                            <p style={{ fontSize: '0.7rem', fontWeight: '500', color: 'var(--text-secondary)', marginTop: '0.15rem' }}>
+                              {apt.date} at {apt.time}
+                            </p>
+                          </div>
+                          <span style={{ marginLeft: 'auto', fontSize: '0.65rem', height: 'fit-content', padding: '0.15rem 0.4rem', borderRadius: '8px', backgroundColor: 'var(--accent-emerald-glow)', color: 'var(--accent-emerald)', fontWeight: '600' }}>Confirmed</span>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+
+              </div>
+
+            </div>
+          )}
+
+          {/* --- DEDICATED HEALTH TRACKER VIEW --- */}
+          {view === 'tracker' && (
+            <div className="animate-fade-in" style={{ padding: '2rem', display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+              <div>
+                <h2 style={{ fontSize: '1.8rem', fontFamily: 'var(--font-display)', fontWeight: '700' }}>Interactive Health Tracker</h2>
+                <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Log daily physical parameters, update wellness checklist, and review history charts.</p>
               </div>
 
               {/* INTERACTIVE TRACKERS BLOCK */}
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1.5rem' }}>
+                
                 {/* 1. Water Intake */}
-                <div className="health-card animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+                <div className="health-card" style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                       <div style={{ width: '32px', height: '32px', borderRadius: '8px', backgroundColor: 'var(--accent-blue-glow)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -1777,13 +2022,13 @@ export default function App() {
                   <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center' }}>
                     <button 
                       onClick={() => adjustTracker('water', -250, 0)}
-                      style={{ padding: '0.5rem 1rem', borderRadius: '8px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-tertiary)', color: 'var(--text-secondary)' }}
+                      style={{ padding: '0.5rem 1rem', borderRadius: '8px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-tertiary)', color: 'var(--text-secondary)', cursor: 'pointer' }}
                     >
                       <Minus size={16} />
                     </button>
                     <button 
                       onClick={() => adjustTracker('water', 250, 0)}
-                      style={{ padding: '0.5rem 1.5rem', borderRadius: '8px', backgroundColor: 'var(--accent-blue)', color: '#ffffff', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '0.35rem' }}
+                      style={{ padding: '0.5rem 1.5rem', borderRadius: '8px', backgroundColor: 'var(--accent-blue)', color: '#ffffff', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '0.35rem', border: 'none', cursor: 'pointer' }}
                     >
                       <Plus size={16} />
                       250 ml
@@ -1792,7 +2037,7 @@ export default function App() {
                 </div>
 
                 {/* 2. Sleep Tracker */}
-                <div className="health-card animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+                <div className="health-card" style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                       <div style={{ width: '32px', height: '32px', borderRadius: '8px', backgroundColor: 'var(--accent-teal-glow)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -1811,13 +2056,13 @@ export default function App() {
                   <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center' }}>
                     <button 
                       onClick={() => adjustTracker('sleep', -0.5, 0, 24)}
-                      style={{ padding: '0.5rem 1rem', borderRadius: '8px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-tertiary)', color: 'var(--text-secondary)' }}
+                      style={{ padding: '0.5rem 1rem', borderRadius: '8px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-tertiary)', color: 'var(--text-secondary)', cursor: 'pointer' }}
                     >
                       <Minus size={16} />
                     </button>
                     <button 
                       onClick={() => adjustTracker('sleep', 0.5, 0, 24)}
-                      style={{ padding: '0.5rem 1.5rem', borderRadius: '8px', backgroundColor: 'var(--accent-teal)', color: '#ffffff', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '0.35rem' }}
+                      style={{ padding: '0.5rem 1.5rem', borderRadius: '8px', backgroundColor: 'var(--accent-teal)', color: '#ffffff', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '0.35rem', border: 'none', cursor: 'pointer' }}
                     >
                       <Plus size={16} />
                       0.5 hrs
@@ -1826,7 +2071,7 @@ export default function App() {
                 </div>
 
                 {/* 3. Exercise Tracker */}
-                <div className="health-card animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+                <div className="health-card" style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                       <div style={{ width: '32px', height: '32px', borderRadius: '8px', backgroundColor: 'rgba(22, 163, 74, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -1845,13 +2090,13 @@ export default function App() {
                   <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center' }}>
                     <button 
                       onClick={() => adjustTracker('exercise', -5, 0)}
-                      style={{ padding: '0.5rem 1rem', borderRadius: '8px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-tertiary)', color: 'var(--text-secondary)' }}
+                      style={{ padding: '0.5rem 1rem', borderRadius: '8px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-tertiary)', color: 'var(--text-secondary)', cursor: 'pointer' }}
                     >
                       <Minus size={16} />
                     </button>
                     <button 
                       onClick={() => adjustTracker('exercise', 5, 0)}
-                      style={{ padding: '0.5rem 1.5rem', borderRadius: '8px', backgroundColor: 'var(--accent-emerald)', color: '#ffffff', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '0.35rem' }}
+                      style={{ padding: '0.5rem 1.5rem', borderRadius: '8px', backgroundColor: 'var(--accent-emerald)', color: '#ffffff', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '0.35rem', border: 'none', cursor: 'pointer' }}
                     >
                       <Plus size={16} />
                       5 mins
@@ -1860,7 +2105,7 @@ export default function App() {
                 </div>
 
                 {/* 4. Mood Tracker */}
-                <div className="health-card animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+                <div className="health-card" style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                       <div style={{ width: '32px', height: '32px', borderRadius: '8px', backgroundColor: 'rgba(234, 88, 12, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -1884,7 +2129,10 @@ export default function App() {
                             transform: isActive ? 'scale(1.25)' : 'scale(1)',
                             opacity: isActive ? '1' : '0.4',
                             filter: isActive ? 'grayscale(0)' : 'grayscale(30%)',
-                            transition: 'all 0.15s ease'
+                            transition: 'all 0.15s ease',
+                            border: 'none',
+                            background: 'transparent',
+                            cursor: 'pointer'
                           }}
                           title={`Mood level ${level}`}
                         >
@@ -1900,7 +2148,7 @@ export default function App() {
                 </div>
 
                 {/* 5. Steps Tracker */}
-                <div className="health-card animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+                <div className="health-card" style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                       <div style={{ width: '32px', height: '32px', borderRadius: '8px', backgroundColor: 'var(--accent-teal-glow)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -1919,13 +2167,13 @@ export default function App() {
                   <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center' }}>
                     <button 
                       onClick={() => adjustTracker('steps', -1000, 0, 50000)}
-                      style={{ padding: '0.5rem 1rem', borderRadius: '8px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-tertiary)' }}
+                      style={{ padding: '0.5rem 1rem', borderRadius: '8px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-tertiary)', cursor: 'pointer' }}
                     >
                       <Minus size={16} />
                     </button>
                     <button 
                       onClick={() => adjustTracker('steps', 1000, 0, 50000)}
-                      style={{ padding: '0.5rem 1.5rem', borderRadius: '8px', backgroundColor: 'var(--accent-teal)', color: '#ffffff', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '0.35rem' }}
+                      style={{ padding: '0.5rem 1.5rem', borderRadius: '8px', backgroundColor: 'var(--accent-teal)', color: '#ffffff', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '0.35rem', border: 'none', cursor: 'pointer' }}
                     >
                       <Plus size={16} />
                       1,000 steps
@@ -1934,7 +2182,7 @@ export default function App() {
                 </div>
 
                 {/* 6. Calorie Tracker */}
-                <div className="health-card animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+                <div className="health-card" style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                       <div style={{ width: '32px', height: '32px', borderRadius: '8px', backgroundColor: 'rgba(234, 88, 12, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -1953,13 +2201,13 @@ export default function App() {
                   <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center' }}>
                     <button 
                       onClick={() => adjustTracker('calories', -100, 0, 10000)}
-                      style={{ padding: '0.5rem 1rem', borderRadius: '8px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-tertiary)' }}
+                      style={{ padding: '0.5rem 1rem', borderRadius: '8px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-tertiary)', cursor: 'pointer' }}
                     >
                       <Minus size={16} />
                     </button>
                     <button 
                       onClick={() => adjustTracker('calories', 100, 0, 10000)}
-                      style={{ padding: '0.5rem 1.5rem', borderRadius: '8px', backgroundColor: 'var(--accent-warning)', color: '#ffffff', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '0.35rem' }}
+                      style={{ padding: '0.5rem 1.5rem', borderRadius: '8px', backgroundColor: 'var(--accent-warning)', color: '#ffffff', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '0.35rem', border: 'none', cursor: 'pointer' }}
                     >
                       <Plus size={16} />
                       100 kcal
@@ -1968,7 +2216,7 @@ export default function App() {
                 </div>
 
                 {/* 7. Wellness Habits Checklist */}
-                <div className="health-card animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                <div className="health-card" style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                       <div style={{ width: '32px', height: '32px', borderRadius: '8px', backgroundColor: 'var(--accent-emerald-glow)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -1998,10 +2246,12 @@ export default function App() {
                     })}
                   </div>
                 </div>
+
               </div>
 
               {/* HISTORICAL TRENDS & APPOINTMENT OVERVIEWS */}
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(480px, 1fr))', gap: '1.5rem' }}>
+                
                 {/* Historical Log list */}
                 <div className="health-card" style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                   <h3 style={{ fontSize: '1.1rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.5rem' }}>Recent Wellness Logs</h3>
@@ -2027,38 +2277,6 @@ export default function App() {
                   </div>
                 </div>
 
-                {/* Upcoming Appointments Quick check */}
-                <div className="health-card" style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <h3 style={{ fontSize: '1.1rem' }}>Upcoming Appointments</h3>
-                    <button onClick={() => setView('appointments')} style={{ fontSize: '0.8rem', color: 'var(--accent-teal)', fontWeight: '600' }}>Manage</button>
-                  </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', flex: 1 }}>
-                    {bookedAppointments.length === 0 ? (
-                      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '1rem', border: '1.5px dashed var(--border-color)', borderRadius: '12px', gap: '0.5rem' }}>
-                        <Calendar size={24} color="var(--text-muted)" />
-                        <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>No upcoming appointments</p>
-                        <button onClick={() => setView('appointments')} style={{ fontSize: '0.8rem', color: 'var(--accent-teal)', fontWeight: '600' }}>Schedule a Consultation</button>
-                      </div>
-                    ) : (
-                      bookedAppointments.map(apt => (
-                        <div key={apt.id} style={{ display: 'flex', gap: '1rem', padding: '0.85rem 1rem', borderRadius: '12px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-card-hover)' }}>
-                          <div style={{ width: '40px', height: '40px', borderRadius: '10px', backgroundColor: 'var(--accent-blue-glow)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                            <Stethoscope color="var(--accent-blue)" size={20} />
-                          </div>
-                          <div>
-                            <h4 style={{ fontSize: '0.9rem', color: 'var(--text-primary)' }}>{apt.doctorName}</h4>
-                            <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{apt.doctorSpecialty}</p>
-                            <p style={{ fontSize: '0.75rem', fontWeight: '500', color: 'var(--text-secondary)', marginTop: '0.25rem' }}>
-                              {apt.date} at {apt.time}
-                            </p>
-                          </div>
-                          <span style={{ marginLeft: 'auto', fontSize: '0.7rem', height: 'fit-content', padding: '0.2rem 0.5rem', borderRadius: '10px', backgroundColor: 'var(--accent-emerald-glow)', color: 'var(--accent-emerald)', fontWeight: '600' }}>Confirmed</span>
-                        </div>
-                      ))
-                    )}
-                  </div>
-                </div>
               </div>
             </div>
           )}
@@ -3651,12 +3869,11 @@ export default function App() {
             </div>
           )}
 
-          {/* --- PROFILE SETTINGS VIEW --- */}
           {view === 'profile' && (
             <div className="animate-fade-in" style={{ padding: '2rem', maxWidth: '800px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '2rem' }}>
               <div>
-                <h2 style={{ fontSize: '1.8rem', fontFamily: 'var(--font-display)', fontWeight: '700' }}>Profile & Data Management</h2>
-                <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Review patient parameters, set local encryption configs, or export medical summaries.</p>
+                <h2 style={{ fontSize: '1.8rem', fontFamily: 'var(--font-display)', fontWeight: '700' }}>Patient Profile</h2>
+                <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Review patient credentials, dietary/lifestyle preferences, and view your digital health passport.</p>
               </div>
 
               {/* Success notifications */}
@@ -3744,153 +3961,11 @@ export default function App() {
 
                   <button 
                     type="submit" 
-                    style={{ padding: '0.85rem', borderRadius: '8px', backgroundColor: 'var(--accent-teal)', color: '#ffffff', fontWeight: '600' }}
+                    style={{ padding: '0.85rem', borderRadius: '8px', backgroundColor: 'var(--accent-teal)', color: '#ffffff', fontWeight: '600', border: 'none', cursor: 'pointer' }}
                   >
                     Save Changes
                   </button>
                 </form>
-              </div>
-
-              {/* Voice AI Assistant Settings Card */}
-              <div className="health-card" style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-                <h3 style={{ fontSize: '1.1rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.5rem' }}>Voice AI Assistant & Accessibility</h3>
-                
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-                  
-                  {/* Enable Voice Mode */}
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <div>
-                      <strong style={{ fontSize: '0.9rem', color: 'var(--text-primary)' }}>Enable voice auto-readout</strong>
-                      <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Automatically read aloud AI responses during chat.</p>
-                    </div>
-                    <input 
-                      type="checkbox" 
-                      checked={privacySettings.voiceEnabled} 
-                      onChange={(e) => handlePrivacyToggle('voiceEnabled', e.target.checked)}
-                      style={{ width: 'auto', transform: 'scale(1.2)' }}
-                    />
-                  </div>
-
-                  {/* Voice Language selection */}
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <div>
-                      <strong style={{ fontSize: '0.9rem', color: 'var(--text-primary)' }}>Assistant Speech Language</strong>
-                      <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Adjust transcribing and speaking phonetics.</p>
-                    </div>
-                    <select 
-                      value={privacySettings.voiceLanguage} 
-                      onChange={(e) => handlePrivacyToggle('voiceLanguage', e.target.value)}
-                      style={{ width: '160px' }}
-                    >
-                      <option value="en">English (US)</option>
-                      <option value="hi">Hindi (हिंदी)</option>
-                      <option value="hinglish">Hinglish (Hindi/English)</option>
-                    </select>
-                  </div>
-
-                  {/* Speaking Speed */}
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <div>
-                      <strong style={{ fontSize: '0.9rem', color: 'var(--text-primary)' }}>Speaking Speed (Rate)</strong>
-                      <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Adjust speed of voice feedback.</p>
-                    </div>
-                    <select 
-                      value={privacySettings.speakingSpeed} 
-                      onChange={(e) => handlePrivacyToggle('speakingSpeed', parseFloat(e.target.value))}
-                      style={{ width: '160px' }}
-                    >
-                      <option value="0.8">0.8x (Slow)</option>
-                      <option value="1.0">1.0x (Normal)</option>
-                      <option value="1.25">1.25x (Fast)</option>
-                      <option value="1.5">1.5x (Very Fast)</option>
-                      <option value="2.0">2.0x (Double Speed)</option>
-                    </select>
-                  </div>
-
-                  {/* Voice Gender */}
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <div>
-                      <strong style={{ fontSize: '0.9rem', color: 'var(--text-primary)' }}>Assistant Voice Tone</strong>
-                      <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Select female or male spoken voice profiles.</p>
-                    </div>
-                    <select 
-                      value={privacySettings.voiceGender} 
-                      onChange={(e) => handlePrivacyToggle('voiceGender', e.target.value)}
-                      style={{ width: '160px' }}
-                    >
-                      <option value="female">Female Voice</option>
-                      <option value="male">Male Voice</option>
-                    </select>
-                  </div>
-
-                  {/* Large Font accessibility */}
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <div>
-                      <strong style={{ fontSize: '0.9rem', color: 'var(--text-primary)' }}>Large Text Mode (Accessibility)</strong>
-                      <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Scale application text layout for easier readability.</p>
-                    </div>
-                    <input 
-                      type="checkbox" 
-                      checked={privacySettings.largeFontMode} 
-                      onChange={(e) => handlePrivacyToggle('largeFontMode', e.target.checked)}
-                      style={{ width: 'auto', transform: 'scale(1.2)' }}
-                    />
-                  </div>
-
-                </div>
-              </div>
-
-              {/* Data & Privacy Settings Card */}
-              <div className="health-card" style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-                <h3 style={{ fontSize: '1.1rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.5rem' }}>Confidentiality & Data Privacy</h3>
-                
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-                  
-                  {/* Auto delete setting */}
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <div>
-                      <strong style={{ fontSize: '0.9rem', color: 'var(--text-primary)' }}>Automatic Chat Deletion</strong>
-                      <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Choose when consultation records are deleted.</p>
-                    </div>
-                    <select 
-                      value={privacySettings.autoDelete} 
-                      onChange={(e) => handlePrivacyToggle('autoDelete', e.target.value)}
-                      style={{ width: '160px' }}
-                    >
-                      <option value="never">Never (Keep history)</option>
-                      <option value="logout">Wipe on logout</option>
-                      <option value="24h">Wipe after 24 hours</option>
-                    </select>
-                  </div>
-
-                  {/* Local encryption */}
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <div>
-                      <strong style={{ fontSize: '0.9rem', color: 'var(--text-primary)' }}>Sandbox Storage Encryption</strong>
-                      <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Encrypt patient parameters inside browser database cache.</p>
-                    </div>
-                    <input 
-                      type="checkbox" 
-                      checked={privacySettings.mockEncryption} 
-                      onChange={(e) => handlePrivacyToggle('mockEncryption', e.target.checked)}
-                      style={{ width: 'auto', transform: 'scale(1.2)' }}
-                    />
-                  </div>
-
-                  {/* Data sharing toggle */}
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <div>
-                      <strong style={{ fontSize: '0.9rem', color: 'var(--text-primary)' }}>Anonymized Education Logs sharing</strong>
-                      <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Allow sharing of wellness tracking logs for clinical studies.</p>
-                    </div>
-                    <input 
-                      type="checkbox" 
-                      checked={privacySettings.dataSharing} 
-                      onChange={(e) => handlePrivacyToggle('dataSharing', e.target.checked)}
-                      style={{ width: 'auto', transform: 'scale(1.2)' }}
-                    />
-                  </div>
-                </div>
               </div>
 
               {/* DIGITAL HEALTH PASSPORT */}
@@ -3982,7 +4057,7 @@ export default function App() {
                         style={{
                           padding: '0.6rem 1.2rem', borderRadius: '8px', border: '1px solid var(--border-color)',
                           backgroundColor: 'var(--bg-tertiary)', color: 'var(--text-primary)', fontWeight: '600',
-                          display: 'flex', alignItems: 'center', gap: '0.5rem', width: 'fit-content'
+                          display: 'flex', alignItems: 'center', gap: '0.5rem', width: 'fit-content', cursor: 'pointer'
                         }}
                       >
                         <QrCode size={16} />
@@ -4027,9 +4102,9 @@ export default function App() {
                           printWindow.document.close();
                         }}
                         style={{
-                          padding: '0.6rem 1.2rem', borderRadius: '8px', border: '1px solid var(--border-color)',
+                          padding: '0.6rem 1.2rem', borderRadius: '8px', border: 'none',
                           backgroundColor: 'var(--accent-teal-glow)', color: 'var(--accent-teal)', fontWeight: '600',
-                          display: 'flex', alignItems: 'center', gap: '0.5rem', width: 'fit-content'
+                          display: 'flex', alignItems: 'center', gap: '0.5rem', width: 'fit-content', cursor: 'pointer'
                         }}
                       >
                         <Download size={16} />
@@ -4073,7 +4148,7 @@ export default function App() {
                         width: '100%', padding: '0.6rem', borderRadius: '6px',
                         backgroundColor: profile.subscriptionPlan === 'free' ? 'var(--accent-teal)' : 'var(--bg-tertiary)',
                         color: profile.subscriptionPlan === 'free' ? '#ffffff' : 'var(--text-secondary)',
-                        fontWeight: '600', marginTop: '1.5rem'
+                        fontWeight: '600', marginTop: '1.5rem', border: 'none', cursor: 'pointer'
                       }}
                     >
                       {profile.subscriptionPlan === 'free' ? 'Active Plan' : 'Choose Free'}
@@ -4110,7 +4185,7 @@ export default function App() {
                         width: '100%', padding: '0.6rem', borderRadius: '6px',
                         backgroundColor: profile.subscriptionPlan === 'premium' ? 'var(--accent-teal)' : 'var(--bg-tertiary)',
                         color: profile.subscriptionPlan === 'premium' ? '#ffffff' : 'var(--text-secondary)',
-                        fontWeight: '600', marginTop: '1.5rem'
+                        fontWeight: '600', marginTop: '1.5rem', border: 'none', cursor: 'pointer'
                       }}
                     >
                       {profile.subscriptionPlan === 'premium' ? 'Active Plan' : 'Upgrade to Premium'}
@@ -4144,11 +4219,159 @@ export default function App() {
                         width: '100%', padding: '0.6rem', borderRadius: '6px',
                         backgroundColor: profile.subscriptionPlan === 'clinic' ? 'var(--accent-teal)' : 'var(--bg-tertiary)',
                         color: profile.subscriptionPlan === 'clinic' ? '#ffffff' : 'var(--text-secondary)',
-                        fontWeight: '600', marginTop: '1.5rem'
+                        fontWeight: '600', marginTop: '1.5rem', border: 'none', cursor: 'pointer'
                       }}
                     >
                       {profile.subscriptionPlan === 'clinic' ? 'Active Plan' : 'Select Clinic Plan'}
                     </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {view === 'settings' && (
+            <div className="animate-fade-in" style={{ padding: '2rem', maxWidth: '800px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+              <div>
+                <h2 style={{ fontSize: '1.8rem', fontFamily: 'var(--font-display)', fontWeight: '700' }}>Settings & Privacy</h2>
+                <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Configure Voice AI speech properties, configure confidentiality parameters, or clear database items.</p>
+              </div>
+
+              {/* Voice AI Assistant Settings Card */}
+              <div className="health-card" style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                <h3 style={{ fontSize: '1.1rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.5rem' }}>Voice AI Assistant & Accessibility</h3>
+                
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+                  {/* Enable Voice Mode */}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div>
+                      <strong style={{ fontSize: '0.9rem', color: 'var(--text-primary)' }}>Enable voice auto-readout</strong>
+                      <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Automatically read aloud AI responses during chat.</p>
+                    </div>
+                    <input 
+                      type="checkbox" 
+                      checked={privacySettings.voiceEnabled} 
+                      onChange={(e) => handlePrivacyToggle('voiceEnabled', e.target.checked)}
+                      style={{ width: 'auto', transform: 'scale(1.2)' }}
+                    />
+                  </div>
+
+                  {/* Voice Language selection */}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div>
+                      <strong style={{ fontSize: '0.9rem', color: 'var(--text-primary)' }}>Assistant Speech Language</strong>
+                      <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Adjust transcribing and speaking phonetics.</p>
+                    </div>
+                    <select 
+                      value={privacySettings.voiceLanguage} 
+                      onChange={(e) => handlePrivacyToggle('voiceLanguage', e.target.value)}
+                      style={{ width: '160px' }}
+                    >
+                      <option value="en">English (US)</option>
+                      <option value="hi">Hindi (हिंदी)</option>
+                      <option value="hinglish">Hinglish (Hindi/English)</option>
+                    </select>
+                  </div>
+
+                  {/* Speaking Speed */}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div>
+                      <strong style={{ fontSize: '0.9rem', color: 'var(--text-primary)' }}>Speaking Speed (Rate)</strong>
+                      <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Adjust speed of voice feedback.</p>
+                    </div>
+                    <select 
+                      value={privacySettings.speakingSpeed} 
+                      onChange={(e) => handlePrivacyToggle('speakingSpeed', parseFloat(e.target.value))}
+                      style={{ width: '160px' }}
+                    >
+                      <option value="0.8">0.8x (Slow)</option>
+                      <option value="1.0">1.0x (Normal)</option>
+                      <option value="1.25">1.25x (Fast)</option>
+                      <option value="1.5">1.5x (Very Fast)</option>
+                      <option value="2.0">2.0x (Double Speed)</option>
+                    </select>
+                  </div>
+
+                  {/* Voice Gender */}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div>
+                      <strong style={{ fontSize: '0.9rem', color: 'var(--text-primary)' }}>Assistant Voice Tone</strong>
+                      <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Select female or male spoken voice profiles.</p>
+                    </div>
+                    <select 
+                      value={privacySettings.voiceGender} 
+                      onChange={(e) => handlePrivacyToggle('voiceGender', e.target.value)}
+                      style={{ width: '160px' }}
+                    >
+                      <option value="female">Female Voice</option>
+                      <option value="male">Male Voice</option>
+                    </select>
+                  </div>
+
+                  {/* Large Font accessibility */}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div>
+                      <strong style={{ fontSize: '0.9rem', color: 'var(--text-primary)' }}>Large Text Mode (Accessibility)</strong>
+                      <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Scale application text layout for easier readability.</p>
+                    </div>
+                    <input 
+                      type="checkbox" 
+                      checked={privacySettings.largeFontMode} 
+                      onChange={(e) => handlePrivacyToggle('largeFontMode', e.target.checked)}
+                      style={{ width: 'auto', transform: 'scale(1.2)' }}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Data & Privacy Settings Card */}
+              <div className="health-card" style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                <h3 style={{ fontSize: '1.1rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.5rem' }}>Confidentiality & Data Privacy</h3>
+                
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+                  {/* Auto delete setting */}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div>
+                      <strong style={{ fontSize: '0.9rem', color: 'var(--text-primary)' }}>Automatic Chat Deletion</strong>
+                      <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Choose when consultation records are deleted.</p>
+                    </div>
+                    <select 
+                      value={privacySettings.autoDelete} 
+                      onChange={(e) => handlePrivacyToggle('autoDelete', e.target.value)}
+                      style={{ width: '160px' }}
+                    >
+                      <option value="never">Never (Keep history)</option>
+                      <option value="logout">Wipe on logout</option>
+                      <option value="24h">Wipe after 24 hours</option>
+                    </select>
+                  </div>
+
+                  {/* Local encryption */}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div>
+                      <strong style={{ fontSize: '0.9rem', color: 'var(--text-primary)' }}>Sandbox Storage Encryption</strong>
+                      <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Encrypt patient parameters inside browser database cache.</p>
+                    </div>
+                    <input 
+                      type="checkbox" 
+                      checked={privacySettings.mockEncryption} 
+                      onChange={(e) => handlePrivacyToggle('mockEncryption', e.target.checked)}
+                      style={{ width: 'auto', transform: 'scale(1.2)' }}
+                    />
+                  </div>
+
+                  {/* Data sharing toggle */}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div>
+                      <strong style={{ fontSize: '0.9rem', color: 'var(--text-primary)' }}>Anonymized Education Logs sharing</strong>
+                      <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Allow sharing of wellness tracking logs for clinical studies.</p>
+                    </div>
+                    <input 
+                      type="checkbox" 
+                      checked={privacySettings.dataSharing} 
+                      onChange={(e) => handlePrivacyToggle('dataSharing', e.target.checked)}
+                      style={{ width: 'auto', transform: 'scale(1.2)' }}
+                    />
                   </div>
                 </div>
               </div>
@@ -4164,7 +4387,7 @@ export default function App() {
                       flex: '1 1 200px', padding: '0.85rem 1.25rem', borderRadius: '8px', 
                       backgroundColor: 'var(--accent-teal-glow)', color: 'var(--accent-teal)', 
                       fontWeight: '600', display: 'flex', alignItems: 'center', 
-                      justifyContent: 'center', gap: '0.5rem'
+                      justifyContent: 'center', gap: '0.5rem', border: 'none', cursor: 'pointer'
                     }}
                   >
                     <Download size={18} />
@@ -4177,7 +4400,7 @@ export default function App() {
                       flex: '1 1 200px', padding: '0.85rem 1.25rem', borderRadius: '8px', 
                       border: '1px solid var(--border-color)', backgroundColor: '#ffffff',
                       color: 'var(--text-secondary)', fontWeight: '600', display: 'flex', alignItems: 'center', 
-                      justifyContent: 'center', gap: '0.5rem'
+                      justifyContent: 'center', gap: '0.5rem', cursor: 'pointer'
                     }}
                   >
                     <Trash2 size={18} />
@@ -4191,7 +4414,7 @@ export default function App() {
                       backgroundColor: '#fff5f5', border: '1px solid #fee2e2', 
                       color: 'var(--accent-rose)', fontWeight: '600', 
                       display: 'flex', alignItems: 'center', justifyContent: 'center', 
-                      gap: '0.5rem'
+                      gap: '0.5rem', cursor: 'pointer'
                     }}
                   >
                     <Trash2 size={18} />
@@ -4199,7 +4422,6 @@ export default function App() {
                   </button>
                 </div>
               </div>
-
             </div>
           )}
 
