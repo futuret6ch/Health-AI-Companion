@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { db, DOCTORS, DOCTOR_PATIENTS, MEDICINE_KB, FIRST_AID_GUIDES, EDUCATION_ARTICLES, MOCK_HOSPITALS } from './mockDb';
 import { getChatResponse, checkSymptoms, analyzeMedicalReport, searchMedicines, calculateHealthRisk, getAiPatientSummary } from './aiEngine';
+import { vectorDb, generateBgem3Embedding } from './ragEngine';
 
 export default function App() {
   // --- STATE ---
@@ -106,6 +107,16 @@ export default function App() {
   const [showMedSearchPanel, setShowMedSearchPanel] = useState(false);
   const [medSearchInput, setMedSearchInput] = useState('');
   const [showAttachmentDropdown, setShowAttachmentDropdown] = useState(false);
+
+  // BGE-M3 RAG & Whisper STT States
+  const [showRagExplorer, setShowRagExplorer] = useState(false);
+  const [ragSearchQuery, setRagSearchQuery] = useState('');
+  const [ragTestResults, setRagTestResults] = useState(null);
+  const [newDocTitle, setNewDocTitle] = useState('');
+  const [newDocCategory, setNewDocCategory] = useState('Medicine Information');
+  const [newDocContent, setNewDocContent] = useState('');
+  const [ragIngestionFlash, setRagIngestionFlash] = useState(false);
+  const [ragDocumentList, setRagDocumentList] = useState(() => vectorDb.getAllDocuments());
 
   // New SaaS states
   const [savedMedicines, setSavedMedicines] = useState(() => {
@@ -618,6 +629,46 @@ export default function App() {
     setChats(updated);
     if (activeChatId === id) {
       setActiveChatId(updated.length > 0 ? updated[0].id : null);
+    }
+  };
+
+  // RAG Event Handlers
+  const handleRagTestSearch = () => {
+    if (!ragSearchQuery.trim()) return;
+    const result = vectorDb.search(ragSearchQuery, 10, 0.0);
+    setRagTestResults(result);
+  };
+
+  const handleAddRagDoc = () => {
+    if (!newDocTitle.trim() || !newDocContent.trim()) {
+      alert("Please enter both Title and Content.");
+      return;
+    }
+    setRagIngestionFlash(true);
+    setTimeout(() => {
+      vectorDb.addDocument(newDocTitle, newDocCategory, newDocContent);
+      setRagDocumentList(vectorDb.getAllDocuments());
+      setNewDocTitle('');
+      setNewDocContent('');
+      setRagIngestionFlash(false);
+      setRagTestResults(null);
+      setRagSearchQuery('');
+    }, 600);
+  };
+
+  const handleDeleteRagDoc = (id) => {
+    vectorDb.deleteDocument(id);
+    setRagDocumentList(vectorDb.getAllDocuments());
+    setRagTestResults(null);
+    setRagSearchQuery('');
+  };
+
+  const handleResetRagDatabase = () => {
+    if (confirm("Reset vector database to default medical documents?")) {
+      vectorDb.resetDatabase();
+      setRagDocumentList(vectorDb.getAllDocuments());
+      setRagTestResults(null);
+      setRagSearchQuery('');
     }
   };
 
@@ -2360,9 +2411,31 @@ export default function App() {
                         <h4 style={{ fontSize: '0.95rem', fontWeight: '700' }}>{activeChat.title}</h4>
                         <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Virtual Clinical Knowledge AI</p>
                       </div>
-                      <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-                        <Shield size={14} color="var(--accent-teal)" /> Secure Locally Encrypted
-                      </span>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                        <button
+                          onClick={() => setShowRagExplorer(!showRagExplorer)}
+                          style={{
+                            padding: '0.4rem 0.8rem',
+                            borderRadius: '20px',
+                            border: showRagExplorer ? '1.5px solid var(--accent-teal)' : '1px solid var(--border-color)',
+                            backgroundColor: showRagExplorer ? 'var(--accent-teal-glow)' : 'transparent',
+                            color: showRagExplorer ? 'var(--accent-teal)' : 'var(--text-secondary)',
+                            fontSize: '0.78rem',
+                            fontWeight: '600',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '0.35rem',
+                            transition: 'all 0.15s ease'
+                          }}
+                        >
+                          <Sparkles size={14} />
+                          <span>RAG Explorer</span>
+                        </button>
+                        <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                          <Shield size={14} color="var(--accent-teal)" /> Secure Locally Encrypted
+                        </span>
+                      </div>
                     </div>
 
                     {/* Messages Scroll Area */}
@@ -3287,6 +3360,252 @@ export default function App() {
                   </div>
                 )}
               </div>
+
+              {/* RAG & Whisper Explorer Side Panel */}
+              {showRagExplorer && (
+                <div className="glass-panel animate-fade-in" style={{
+                  width: '380px',
+                  borderLeft: '1px solid var(--border-color)',
+                  backgroundColor: '#ffffff',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  flexShrink: 0,
+                  height: '100%',
+                  overflowY: 'auto'
+                }}>
+                  {/* Header */}
+                  <div style={{ padding: '1rem', borderBottom: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: 'var(--bg-secondary)' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      <Sparkles size={18} color="var(--accent-teal)" />
+                      <span style={{ fontWeight: '700', fontSize: '0.9rem', color: 'var(--text-primary)' }}>RAG & Whisper Explorer</span>
+                    </div>
+                    <button 
+                      onClick={() => setShowRagExplorer(false)}
+                      style={{ border: 'none', background: 'transparent', cursor: 'pointer', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                    >
+                      <Plus size={18} style={{ transform: 'rotate(45deg)' }} />
+                    </button>
+                  </div>
+
+                  <div style={{ padding: '1rem', display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+                    
+                    {/* Model Status HUD */}
+                    <div className="health-card" style={{ padding: '0.75rem 1rem', display: 'flex', flexDirection: 'column', gap: '0.5rem', backgroundColor: 'var(--accent-teal-glow)', border: '1px solid rgba(13, 148, 136, 0.2)', borderRadius: '12px' }}>
+                      <h4 style={{ fontSize: '0.8rem', fontWeight: '700', textTransform: 'uppercase', color: 'var(--accent-teal)', margin: 0 }}>Embedding Model Status</h4>
+                      <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                        <div><strong>Model:</strong> BGE-M3 (Dense Semantic)</div>
+                        <div><strong>Dimension:</strong> 1024 Float32 coordinates</div>
+                        <div><strong>Normalization:</strong> L2 ($L_2$ norm = 1.0)</div>
+                        <div><strong>Vector Store:</strong> {ragDocumentList.length} docs indexed</div>
+                      </div>
+                    </div>
+
+                    {/* Whisper STT Status HUD */}
+                    <div className="health-card" style={{ padding: '0.75rem 1rem', display: 'flex', flexDirection: 'column', gap: '0.5rem', backgroundColor: 'var(--accent-blue-glow)', border: '1px solid rgba(59, 130, 246, 0.2)', borderRadius: '12px' }}>
+                      <h4 style={{ fontSize: '0.8rem', fontWeight: '700', textTransform: 'uppercase', color: 'var(--accent-blue)', margin: 0 }}>Whisper STT Pipeline</h4>
+                      <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                        <div><strong>Engine:</strong> Whisper AI STT Pipeline</div>
+                        <div><strong>Transcription:</strong> Audio Waveform Input</div>
+                        <div><strong>Status:</strong> {isListening ? '🎙️ Active Listening...' : '💤 Standby (Awaiting mic)'}</div>
+                        {isListening && (
+                          <div style={{ display: 'flex', gap: '3px', alignItems: 'center', height: '15px', marginTop: '0.25rem' }}>
+                            <div className="wave-bar" style={{ width: '3px', height: '12px', backgroundColor: 'var(--accent-blue)', borderRadius: '2px', animation: 'pulse 0.6s infinite alternate' }} />
+                            <div className="wave-bar" style={{ width: '3px', height: '6px', backgroundColor: 'var(--accent-blue)', borderRadius: '2px', animation: 'pulse 0.4s infinite alternate' }} />
+                            <div className="wave-bar" style={{ width: '3px', height: '15px', backgroundColor: 'var(--accent-blue)', borderRadius: '2px', animation: 'pulse 0.8s infinite alternate' }} />
+                            <div className="wave-bar" style={{ width: '3px', height: '8px', backgroundColor: 'var(--accent-blue)', borderRadius: '2px', animation: 'pulse 0.5s infinite alternate' }} />
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Vector Search Similarity Tester */}
+                    <div className="health-card" style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', borderRadius: '12px' }}>
+                      <h4 style={{ fontSize: '0.85rem', fontWeight: '700', margin: 0 }}>Semantic Vector Query</h4>
+                      <div style={{ display: 'flex', gap: '0.35rem' }}>
+                        <input 
+                          type="text" 
+                          placeholder="Type query to test similarity..." 
+                          value={ragSearchQuery}
+                          onChange={(e) => setRagSearchQuery(e.target.value)}
+                          style={{ flex: 1, height: '32px', padding: '0 0.5rem', fontSize: '0.8rem', border: '1px solid var(--border-color)', borderRadius: '6px' }}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              e.preventDefault();
+                              handleRagTestSearch();
+                            }
+                          }}
+                        />
+                        <button 
+                          onClick={handleRagTestSearch}
+                          style={{ padding: '0 0.75rem', height: '32px', borderRadius: '6px', backgroundColor: 'var(--accent-teal)', color: '#ffffff', fontSize: '0.75rem', fontWeight: '600', border: 'none', cursor: 'pointer' }}
+                        >
+                          Search
+                        </button>
+                      </div>
+
+                      {/* Search Matches List */}
+                      {ragTestResults && (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginTop: '0.25rem' }}>
+                          <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: '600' }}>Similarity Search Results (BGE-M3 Cosine):</span>
+                          
+                          {/* Query Vector Visualizer */}
+                          <div style={{ padding: '0.5rem', borderRadius: '6px', backgroundColor: 'var(--bg-tertiary)', border: '1px dashed var(--border-color)' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.65rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>
+                              <span>Query Vector Embedding (1024-d)</span>
+                              <span>First 64 dims</span>
+                            </div>
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(16, 1fr)', gap: '1px' }}>
+                              {Array.from(ragTestResults.queryVector).slice(0, 64).map((val, idx) => {
+                                const intensity = Math.min(Math.abs(val) * 15, 1.0);
+                                const color = val >= 0 
+                                  ? `rgba(13, 148, 136, ${0.1 + intensity * 0.9})` 
+                                  : `rgba(225, 29, 72, ${0.1 + intensity * 0.9})`;
+                                return (
+                                  <div 
+                                    key={idx} 
+                                    style={{ height: '8px', backgroundColor: color, borderRadius: '1px' }} 
+                                    title={`Dim ${idx}: ${val.toFixed(4)}`}
+                                  />
+                                );
+                              })}
+                            </div>
+                          </div>
+
+                          {/* Top Results */}
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem', maxHeight: '180px', overflowY: 'auto' }}>
+                            {ragTestResults.allResults.slice(0, 3).map((res) => (
+                              <div key={res.id} style={{ padding: '0.5rem', borderRadius: '6px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-secondary)', display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                  <span style={{ fontSize: '0.75rem', fontWeight: '700', color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '200px' }}>{res.title}</span>
+                                  <span style={{ fontSize: '0.7rem', fontWeight: '600', color: res.similarity >= 0.35 ? 'var(--accent-teal)' : 'var(--text-muted)' }}>
+                                    {(res.similarity * 100).toFixed(1)}%
+                                  </span>
+                                </div>
+                                <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>{res.category}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Vector Database Document Index */}
+                    <div className="health-card" style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', borderRadius: '12px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <h4 style={{ fontSize: '0.85rem', fontWeight: '700', margin: 0 }}>Vector Document Index</h4>
+                        <button 
+                          onClick={handleResetRagDatabase}
+                          style={{ fontSize: '0.7rem', color: 'var(--accent-rose)', border: 'none', background: 'transparent', cursor: 'pointer', fontWeight: '600' }}
+                        >
+                          Reset Index
+                        </button>
+                      </div>
+
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', maxHeight: '220px', overflowY: 'auto', paddingRight: '0.15rem' }}>
+                        {ragDocumentList.map(doc => (
+                          <div key={doc.id} style={{ padding: '0.6rem', border: '1px solid var(--border-color)', borderRadius: '8px', backgroundColor: '#ffffff', display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                              <div>
+                                <h5 style={{ fontSize: '0.78rem', fontWeight: '700', color: 'var(--text-primary)', margin: 0 }}>{doc.title}</h5>
+                                <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>{doc.category}</span>
+                              </div>
+                              {doc.id.startsWith('rag-custom') && (
+                                <button 
+                                  onClick={() => handleDeleteRagDoc(doc.id)}
+                                  style={{ border: 'none', background: 'transparent', cursor: 'pointer', color: 'var(--accent-rose)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                                >
+                                  <Trash2 size={12} />
+                                </button>
+                              )}
+                            </div>
+                            
+                            <p style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', margin: 0, display: '-webkit-box', WebkitLineClamp: '2', WebkitBoxOrient: 'vertical', overflow: 'hidden', lineHeight: '1.3' }}>
+                              {doc.content}
+                            </p>
+
+                            {/* Dense Embedding Visualizer Grid */}
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.15rem' }}>
+                              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.6rem', color: 'var(--text-muted)' }}>
+                                <span>BGE-M3 Dense Embedding Heatmap</span>
+                                <span>64 dims</span>
+                              </div>
+                              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(16, 1fr)', gap: '1px' }}>
+                                {doc.embedding.slice(0, 64).map((val, idx) => {
+                                  const intensity = Math.min(Math.abs(val) * 15, 1.0);
+                                  const color = val >= 0 
+                                    ? `rgba(13, 148, 136, ${0.1 + intensity * 0.9})` 
+                                    : `rgba(225, 29, 72, ${0.1 + intensity * 0.9})`;
+                                  return (
+                                    <div 
+                                      key={idx} 
+                                      style={{ height: '6px', backgroundColor: color, borderRadius: '1px' }} 
+                                      title={`Dim ${idx}: ${val.toFixed(4)}`}
+                                    />
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Add Custom Document Form */}
+                    <div className="health-card" style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', position: 'relative', overflow: 'hidden', borderRadius: '12px' }}>
+                      {ragIngestionFlash && (
+                        <div style={{
+                          position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+                          backgroundColor: 'rgba(13, 148, 136, 0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          zIndex: 10, animation: 'pulse 0.4s ease-out'
+                        }}>
+                          <span style={{ fontSize: '0.85rem', fontWeight: '700', color: 'var(--accent-teal)', padding: '0.5rem 1rem', borderRadius: '20px', backgroundColor: '#ffffff', boxShadow: 'var(--shadow-md)' }}>
+                            ⚡ Ingesting Vector Embedding...
+                          </span>
+                        </div>
+                      )}
+
+                      <h4 style={{ fontSize: '0.85rem', fontWeight: '700', margin: 0 }}>Ingest Medical Document</h4>
+                      
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                        <input 
+                          type="text" 
+                          placeholder="Document Title (e.g. Lisinopril Drug Card)..." 
+                          value={newDocTitle}
+                          onChange={(e) => setNewDocTitle(e.target.value)}
+                          style={{ height: '32px', padding: '0 0.5rem', fontSize: '0.8rem', border: '1px solid var(--border-color)', borderRadius: '6px' }}
+                        />
+                        <select 
+                          value={newDocCategory}
+                          onChange={(e) => setNewDocCategory(e.target.value)}
+                          style={{ height: '32px', padding: '0 0.5rem', fontSize: '0.8rem', border: '1px solid var(--border-color)', borderRadius: '6px', backgroundColor: '#ffffff' }}
+                        >
+                          <option value="Medicine Information">Medicine Information</option>
+                          <option value="Medical Reports">Medical Reports</option>
+                          <option value="Health Education">Health Education</option>
+                          <option value="FAQ Answers">FAQ Answers</option>
+                        </select>
+                        <textarea 
+                          placeholder="Document Clinical Content (will be processed by BGE-M3)..." 
+                          value={newDocContent}
+                          onChange={(e) => setNewDocContent(e.target.value)}
+                          style={{ minHeight: '60px', padding: '0.4rem 0.5rem', fontSize: '0.8rem', border: '1px solid var(--border-color)', borderRadius: '6px', resize: 'vertical' }}
+                        />
+                        <button 
+                          onClick={handleAddRagDoc}
+                          style={{
+                            padding: '0.5rem', borderRadius: '6px', backgroundColor: 'var(--accent-teal)', color: '#ffffff',
+                            fontSize: '0.8rem', fontWeight: '600', border: 'none', cursor: 'pointer',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.35rem'
+                          }}
+                        >
+                          Vectorize & Ingest
+                        </button>
+                      </div>
+                    </div>
+
+                  </div>
+                </div>
+              )}
             </div>
           )}
 

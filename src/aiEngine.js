@@ -1,6 +1,7 @@
 // AI Engine Simulation Module for HealthAI Companion
 // Enforces strict safety rules, emergency detection, multilingual support, voice optimizations, and Medical Knowledge Base (RAG) retrieval
 import { MEDICINE_KB } from './mockDb';
+import { vectorDb } from './ragEngine';
 
 // Medical RAG Knowledge Base (Reference Documents)
 const MEDICAL_RAG_KB = [
@@ -184,15 +185,18 @@ export function detectEmergency(query) {
   return EMERGENCY_KEYWORDS.some(keyword => normalized.includes(keyword));
 }
 
-// Search RAG Knowledge Base
+// Search RAG Knowledge Base using BGE-M3 Vector Database Similarity
 export function searchKnowledgeBase(query) {
-  const normalized = query.toLowerCase();
-  for (const doc of MEDICAL_RAG_KB) {
-    // Check if query contains any of the doc's keywords
-    const matchesKeyword = doc.keywords.some(kw => normalized.includes(kw));
-    if (matchesKeyword) {
-      return doc;
-    }
+  // Retrieve the top matched document using cosine similarity
+  const searchResult = vectorDb.search(query, 1, 0.35);
+  if (searchResult.topMatches.length > 0) {
+    const match = searchResult.topMatches[0];
+    return {
+      id: match.id,
+      title: match.title,
+      content: match.content,
+      similarity: match.similarity
+    };
   }
   return null;
 }
@@ -889,14 +893,15 @@ Thank you for your question. As an AI health assistant, I can share educational 
 
       // If RAG document matches, enhance output response with RAG citation
       if (ragDoc) {
+        const simPct = (ragDoc.similarity * 100).toFixed(1);
         if (lang === 'hi') {
-          responseText = `🔍 *[चिकित्सा ज्ञान आधार (RAG) से पुनर्प्राप्त: ${ragDoc.title}]*\n> "${ragDoc.content}"\n\n` + responseText;
+          responseText = `🔍 *[चिकित्सा ज्ञान आधार (RAG) से पुनर्प्राप्त: ${ragDoc.title} (समानता: ${simPct}%)]*\n> "${ragDoc.content}"\n\n` + responseText;
           voiceResponse = `चिकित्सा ज्ञान आधार के अनुसार, ${voiceResponse}`;
         } else if (lang === 'hinglish') {
-          responseText = `🔍 *[Retrieved from Medical Knowledge Base (RAG): ${ragDoc.title}]*\n> "${ragDoc.content}"\n\n` + responseText;
+          responseText = `🔍 *[Retrieved from Medical Knowledge Base (RAG): ${ragDoc.title} (Similarity: ${simPct}%)]*\n> "${ragDoc.content}"\n\n` + responseText;
           voiceResponse = `Medical Knowledge Base ke hisab se, ${voiceResponse}`;
         } else {
-          responseText = `🔍 *[Retrieved from Medical Knowledge Base (RAG): ${ragDoc.title}]*\n> "${ragDoc.content}"\n\n` + responseText;
+          responseText = `🔍 *[Retrieved from Medical Knowledge Base (RAG): ${ragDoc.title} (Similarity: ${simPct}%)]*\n> "${ragDoc.content}"\n\n` + responseText;
           voiceResponse = `According to the Medical Knowledge Base guidelines, ${voiceResponse}`;
         }
       }
@@ -920,7 +925,7 @@ Thank you for your question. As an AI health assistant, I can share educational 
         text: responseText,
         voiceText: voiceResponse,
         followUpQuestions: followUp,
-        ragDoc: ragDoc ? { title: ragDoc.title, content: ragDoc.content } : null
+        ragDoc: ragDoc ? { title: ragDoc.title, content: ragDoc.content, similarity: ragDoc.similarity } : null
       });
     }, 1000); // Simulate network latency
   });
