@@ -149,3 +149,33 @@ def generate_chat_completion(message, history, profile, model_name=None, context
         "model": f"{model_name} (Simulated)",
         "timestamp": datetime.utcnow().isoformat() + "Z"
     }
+
+def check_ollama_status():
+    """
+    Checks connection to local Ollama server and lists available models.
+    """
+    try:
+        response = requests.get(f"{OLLAMA_URL}/api/tags", timeout=3)
+        if response.status_code == 200:
+            data = response.json()
+            models = [m["name"] for m in data.get("models", [])]
+            return {
+                "connected": True,
+                "url": OLLAMA_URL,
+                "available_models": models
+            }
+        else:
+            return {
+                "connected": False,
+                "url": OLLAMA_URL,
+                "available_models": [],
+                "error": f"Ollama HTTP {response.status_code}"
+            }
+    except Exception as e:
+        return {
+            "connected": False,
+            "url": OLLAMA_URL,
+            "available_models": [],
+            "error": str(e)
+        }
+
