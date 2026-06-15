@@ -315,9 +315,109 @@ export function getAiPatientSummary(patient) {
 }
 
 // Generate Chat Response (Simulating LLM with safety hooks, RAG retrieval, and medicine lookup checks)
-export function getChatResponse(query, chatHistory = [], profile = {}, isVoiceMode = false, voiceLang = 'en', attachmentType = null, attachmentName = null, reports = []) {
-  return new Promise((resolve) => {
+export function getChatResponse(query, chatHistory = [], profile = {}, isVoiceMode = false, voiceLang = 'en', attachmentType = null, attachmentName = null, reports = [], selectedModel = 'llama3.1', isOfflineMode = false, activeChatMessages = []) {
+  return new Promise(async (resolve) => {
+    // 1. Live Backend Integration Check
+    if (!isOfflineMode) {
+      try {
+        const historyFormatted = (activeChatMessages || []).map(m => ({
+          role: m.sender === 'ai' ? 'assistant' : 'user',
+          content: m.text
+        }));
+
+        const response = await fetch('http://localhost:8000/api/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            message: query,
+            conversationHistory: historyFormatted,
+            userProfile: {
+              name: profile.name || 'User',
+              age: String(profile.age || '30'),
+              gender: profile.gender || 'Female',
+              bloodGroup: profile.bloodGroup || 'O-Positive',
+              allergies: profile.allergies || '',
+              medicalHistory: profile.medicalHistory || ''
+            },
+            model: selectedModel
+          })
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          
+          let allergyAlert = null;
+          let reportRecall = null;
+          let type = 'general';
+          let medicineCard = null;
+
+          // Perform medicine detection on backend response or user query for UI packaging details
+          let matchedMed = null;
+          const normalizedQuery = query.toLowerCase();
+          for (const med of MEDICINE_KB) {
+            if (normalizedQuery.includes(med.name.toLowerCase()) || 
+                med.synonyms.some(s => normalizedQuery.includes(s.toLowerCase()))) {
+              matchedMed = med;
+              break;
+            }
+          }
+
+          if (matchedMed) {
+            type = 'medicine';
+            medicineCard = matchedMed;
+            if (profile.allergies) {
+              const userAllergies = profile.allergies.toLowerCase();
+              if (matchedMed.allergyClass && userAllergies.includes(matchedMed.allergyClass.toLowerCase())) {
+                allergyAlert = `🚨 Profile Allergy Conflict: Our records indicate you are allergic to ${matchedMed.allergyClass}. ${matchedMed.name} is a ${matchedMed.category} and could trigger a severe reaction!`;
+              } else if (userAllergies.includes(matchedMed.name.toLowerCase()) || 
+                         matchedMed.synonyms.some(s => userAllergies.includes(s.toLowerCase()))) {
+                allergyAlert = `🚨 Profile Allergy Conflict: Our records indicate you have an allergy related to ${matchedMed.name}. Taking this could trigger an adverse reaction!`;
+              }
+            }
+
+            if (reports && reports.length > 0) {
+              const medKey = matchedMed.name.toLowerCase();
+              const matchingReport = reports.find(rep => {
+                const textToCheck = (rep.summary + ' ' + rep.fileName).toLowerCase();
+                if (medKey === 'atorvastatin' && (textToCheck.includes('cholesterol') || textToCheck.includes('lipid') || textToCheck.includes('ldl'))) return true;
+                if (medKey === 'metformin' && (textToCheck.includes('glucose') || textToCheck.includes('sugar') || textToCheck.includes('hba1c') || textToCheck.includes('diabet'))) return true;
+                if (medKey === 'lisinopril' && (textToCheck.includes('pressure') || textToCheck.includes('hypertension') || textToCheck.includes('bp'))) return true;
+                if (medKey === 'albuterol' && (textToCheck.includes('asthma') || textToCheck.includes('bronchial') || textToCheck.includes('lung'))) return true;
+                return false;
+              });
+              if (matchingReport) {
+                reportRecall = `📊 Health Profile Sync: Your latest analyzed medical report (${matchingReport.fileName}) notes related metabolic / clinical parameters. ${matchedMed.name} addresses this indicator.`;
+              }
+            }
+          }
+
+          if (attachmentType === 'image' && matchedMed) {
+            type = 'medicine';
+          }
+
+          let voiceText = data.response.replace(/[#*_\-`🚨]/g, '').substring(0, 150) + '...';
+
+          resolve({
+            isEmergency: detectEmergency(query),
+            text: data.response,
+            voiceText: voiceText,
+            followUpQuestions: type === 'medicine' ? `Would you like me to show safety warnings, side effects, or precautions for ${matchedMed.name}?` : "Are there any other symptoms or questions you have?",
+            ragDoc: data.ragDoc ? { title: data.ragDoc.title, content: data.ragDoc.content, similarity: data.ragDoc.similarity } : null,
+            type: type,
+            medicineCard: medicineCard,
+            allergyAlert: allergyAlert,
+            reportRecall: reportRecall
+          });
+          return;
+        }
+      } catch (err) {
+        console.error("Backend fetch error in getChatResponse. Falling back to simulation.", err);
+      }
+    }
+
+    // --- Simulation Fallback ---
     setTimeout(() => {
+
       // Normalizing language code mapping
       let lang = 'en';
       if (voiceLang === 'hi-IN' || voiceLang === 'hi') lang = 'hi';
