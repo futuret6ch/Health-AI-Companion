@@ -446,6 +446,29 @@ export default function App() {
     setBookedAppointments(db.getAppointments());
     setReportsList(db.getReports());
     setPrivacySettings(db.getPrivacy());
+
+    // Check backend health on startup and periodically
+    const checkConnection = () => {
+      fetch('http://localhost:8000/api/health')
+        .then(res => {
+          if (!res.ok) throw new Error('Unhealthy');
+          return res.json();
+        })
+        .then(data => {
+          if (data.status === 'healthy') {
+            setIsOfflineMode(false);
+          } else {
+            setIsOfflineMode(true);
+          }
+        })
+        .catch(() => {
+          setIsOfflineMode(true);
+        });
+    };
+
+    checkConnection();
+    const interval = setInterval(checkConnection, 15000);
+    return () => clearInterval(interval);
   }, []);
 
   // Update wellness score whenever todayLogs change
@@ -572,7 +595,9 @@ export default function App() {
     // Stop speaking user-generated speech output triggers
     stopSpeaking();
 
-    try {
+      const activeChat = chats.find(c => c.id === activeChatId);
+      const activeChatMessages = activeChat ? activeChat.messages : [];
+
       // Get AI response optimized for multilingual speech and safety alerts
       const aiResponse = await getChatResponse(
         messageText, 
@@ -582,7 +607,10 @@ export default function App() {
         privacySettings.voiceLanguage,
         attachmentType,
         attachmentName,
-        reportsList
+        reportsList,
+        selectedModel,
+        isOfflineMode,
+        activeChatMessages
       );
 
       // Simulate step-by-step RAG guidelines search loop
