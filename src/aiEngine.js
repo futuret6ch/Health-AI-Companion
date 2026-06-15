@@ -1097,8 +1097,65 @@ export function checkSymptoms(data) {
 }
 
 // Medical Report Analysis Engine
-export function analyzeMedicalReport(fileName, textContent) {
-  return new Promise((resolve) => {
+export function analyzeMedicalReport(fileName, textContent, isOfflineMode = false, selectedModel = 'llama3.1') {
+  return new Promise(async (resolve) => {
+    if (!isOfflineMode) {
+      try {
+        const formData = new FormData();
+        const blob = new Blob([textContent], { type: 'text/plain' });
+        formData.append('file', blob, fileName);
+        formData.append('model', selectedModel);
+
+        const response = await fetch('http://localhost:8000/api/upload', {
+          method: 'POST',
+          body: formData
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          
+          const normalized = textContent.toLowerCase();
+          const explanations = [];
+          for (const term in MEDICAL_GLOSSARY) {
+            if (normalized.includes(term) || (term === 'wbc' && normalized.includes('white blood')) || (term === 'rbc' && normalized.includes('red blood'))) {
+              explanations.push({
+                term: term.toUpperCase(),
+                definition: MEDICAL_GLOSSARY[term]
+              });
+            }
+          }
+
+          const questions = [];
+          if (normalized.includes('cholesterol') || normalized.includes('ldl') || normalized.includes('hdl')) {
+            questions.push('What are my target cholesterol levels based on my age and cardiovascular risk factors?');
+            questions.push('Do you recommend lifestyle modifications, or is it time to discuss cholesterol-lowering options?');
+          }
+          if (normalized.includes('glucose') || normalized.includes('sugar') || normalized.includes('hba1c')) {
+            questions.push('Does my HbA1c or fasting glucose value indicate prediabetes or insulin resistance?');
+            questions.push('How often should I monitor my blood sugar levels at home?');
+          }
+          if (normalized.includes('tsh') || normalized.includes('thyroid') || normalized.includes('t3') || normalized.includes('t4')) {
+            questions.push('Does this report suggest my thyroid is underactive or overactive?');
+            questions.push('Would thyroid medication benefit my energy levels and metabolism?');
+          }
+          if (questions.length === 0) {
+            questions.push('Are there any values in this report that are outside of the normal reference range?');
+            questions.push('Do these results explain my recent symptoms, or do we need additional tests?');
+          }
+          questions.push('When should we repeat this test to check if my numbers have improved?');
+
+          resolve({
+            summary: data.text,
+            explanations,
+            doctorQuestions: questions
+          });
+          return;
+        }
+      } catch (err) {
+        console.error("Backend file upload analysis error. Falling back to simulation.", err);
+      }
+    }
+
     setTimeout(() => {
       const normalized = textContent.toLowerCase();
       const explanations = [];

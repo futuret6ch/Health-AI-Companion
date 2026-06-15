@@ -125,7 +125,10 @@ export default function App() {
   const [recentSearches, setRecentSearches] = useState(() => {
     return JSON.parse(localStorage.getItem('health_ai_recent_searches')) || [];
   });
-  const [isOfflineMode, setIsOfflineMode] = useState(false);
+  const [isOfflineMode, setIsOfflineMode] = useState(true);
+  const [selectedModel, setSelectedModel] = useState(() => localStorage.getItem('health_ai_selected_model') || 'llama3.1');
+  const mediaRecorderRef = useRef(null);
+  const audioChunksRef = useRef([]);
   const [pageLoading, setPageLoading] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [showVoiceHud, setShowVoiceHud] = useState(false);
