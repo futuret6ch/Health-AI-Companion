@@ -598,7 +598,8 @@ export default function App() {
       const activeChat = chats.find(c => c.id === activeChatId);
       const activeChatMessages = activeChat ? activeChat.messages : [];
 
-      // Get AI response optimized for multilingual speech and safety alerts
+      try {
+        // Get AI response optimized for multilingual speech and safety alerts
       const aiResponse = await getChatResponse(
         messageText, 
         chats, 
