@@ -82,6 +82,7 @@ export default function App() {
   const [isListening, setIsListening] = useState(false);
   const [isPlayingVoice, setIsPlayingVoice] = useState(false);
   const [speakingMessageId, setSpeakingMessageId] = useState(null);
+  const [voiceState, setVoiceState] = useState('inactive'); // 'inactive' | 'listening' | 'processing' | 'speaking'
   const recognitionRef = useRef(null);
   const [ragStatus, setRagStatus] = useState(null);
   const [ragDocTitle, setRagDocTitle] = useState('');
@@ -277,6 +278,7 @@ export default function App() {
 
       recognition.onstart = () => {
         setIsListening(true);
+        setVoiceState('listening');
       };
 
       recognition.onresult = (event) => {
@@ -289,10 +291,12 @@ export default function App() {
       recognition.onerror = (event) => {
         console.error("Speech recognition error:", event.error);
         setIsListening(false);
+        setVoiceState('inactive');
       };
 
       recognition.onend = () => {
         setIsListening(false);
+        setVoiceState('inactive');
       };
 
       recognitionRef.current = recognition;
@@ -341,16 +345,19 @@ export default function App() {
     utterance.onstart = () => {
       setIsPlayingVoice(true);
       setSpeakingMessageId(messageId);
+      setVoiceState('speaking');
     };
 
     utterance.onend = () => {
       setIsPlayingVoice(false);
       setSpeakingMessageId(null);
+      setVoiceState('inactive');
     };
 
     utterance.onerror = () => {
       setIsPlayingVoice(false);
       setSpeakingMessageId(null);
+      setVoiceState('inactive');
     };
 
     window.speechSynthesis.speak(utterance);
@@ -362,6 +369,7 @@ export default function App() {
     }
     setIsPlayingVoice(false);
     setSpeakingMessageId(null);
+    setVoiceState('inactive');
   };
 
   const toggleListening = async () => {
@@ -379,6 +387,7 @@ export default function App() {
 
       if (isListening) {
         recognitionRef.current.stop();
+        setVoiceState('processing');
       } else {
         stopSpeaking();
         
@@ -390,13 +399,16 @@ export default function App() {
 
         try {
           recognitionRef.current.start();
+          setVoiceState('listening');
         } catch (err) {
           console.error("Failed to start speech recognition:", err);
+          setVoiceState('inactive');
         }
       }
     } else {
       // Live Voice Recording (Whisper AI)
       if (isListening) {
+        setVoiceState('processing');
         if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
           mediaRecorderRef.current.stop();
         }
@@ -420,10 +432,14 @@ export default function App() {
             stream.getTracks().forEach(track => track.stop());
 
             const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
-            if (audioBlob.size === 0) return;
+            if (audioBlob.size === 0) {
+              setVoiceState('inactive');
+              return;
+            }
 
             try {
               setIsAiTyping(true);
+              setVoiceState('processing');
               const formData = new FormData();
               formData.append('file', audioBlob, 'recording.webm');
               if (privacySettings.voiceLanguage) {
@@ -439,12 +455,16 @@ export default function App() {
                 const data = await res.json();
                 if (data.text && data.text.trim()) {
                   handleSendChatMessage(data.text);
+                } else {
+                  setVoiceState('inactive');
                 }
               } else {
                 console.error("Whisper AI STT returned non-200 response");
+                setVoiceState('inactive');
               }
             } catch (err) {
               console.error("Failed to upload audio to Whisper STT:", err);
+              setVoiceState('inactive');
             } finally {
               setIsAiTyping(false);
             }
@@ -452,10 +472,12 @@ export default function App() {
 
           mediaRecorder.start();
           setIsListening(true);
+          setVoiceState('listening');
         } catch (err) {
           console.error("Failed to access microphone or start MediaRecorder:", err);
           alert("Could not access microphone. Please check permissions.");
           setIsListening(false);
+          setVoiceState('inactive');
         }
       }
     }
@@ -1797,19 +1819,19 @@ export default function App() {
           )}
           {/* --- HEALTH DASHBOARD VIEW --- */}
           {view === 'dashboard' && (
-            <div className="animate-fade-in" style={{ padding: '2rem', display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+            <div className="animate-fade-in" style={{ padding: '2rem', display: 'flex', flexDirection: 'column', gap: '2.5rem' }}>
               
-              {/* TOP SECTION: Welcome & Profile Summary Grid */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '1.5rem', alignItems: 'stretch' }}>
+              {/* TOP HEADER SECTION */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1.5rem', alignItems: 'stretch' }}>
                 
-                {/* Welcome Message Card */}
-                <div className="health-card" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: '1rem', minHeight: '160px', background: 'linear-gradient(135deg, #ffffff 0%, var(--bg-primary) 100%)' }}>
+                {/* Personalized Greeting Card */}
+                <div className="health-card" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: '1rem', minHeight: '160px', background: 'linear-gradient(135deg, rgba(37, 99, 235, 0.05) 0%, rgba(13, 148, 136, 0.05) 100%)' }}>
                   <div>
-                    <h2 style={{ fontSize: '2rem', fontFamily: 'var(--font-display)', fontWeight: '800', letterSpacing: '-0.02em', color: 'var(--text-primary)' }}>
-                      Hello, {profile.name.split(' ')[0] || 'User'}!
+                    <h2 style={{ fontSize: '1.8rem', fontFamily: 'var(--font-display)', fontWeight: '800', letterSpacing: '-0.02em', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      {new Date().getHours() < 12 ? 'Good morning 🌅' : new Date().getHours() < 17 ? 'Good afternoon ☀️' : 'Good evening 🌙'}, {profile.name.split(' ')[0] || 'User'}!
                     </h2>
                     <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginTop: '0.5rem', lineHeight: '1.5' }}>
-                      Welcome back to your personalized healthcare dashboard. All health indexes are monitored and calculated locally.
+                      Your Medical AI dashboard is updated. All diagnostic checks, embeddings, and report scans are secure and clinical.
                     </p>
                   </div>
                   <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: '600' }}>
@@ -1817,66 +1839,108 @@ export default function App() {
                   </span>
                 </div>
 
-                {/* Patient Profile Summary Card */}
-                <div className="health-card" style={{ display: 'flex', flexDirection: 'column', justifyItems: 'space-between', gap: '0.75rem' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                    <h4 style={{ fontSize: '0.95rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Patient Parameters</h4>
-                    <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{profile.gender}, {profile.age} yrs</span>
+                {/* Patient Profile Card */}
+                <div className="health-card" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: '0.75rem' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      <div style={{ width: '32px', height: '32px', borderRadius: '50%', backgroundColor: 'var(--accent-teal-glow)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <User size={16} color="var(--accent-teal)" />
+                      </div>
+                      <h4 style={{ fontSize: '0.9rem', fontWeight: '700', color: 'var(--text-primary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Patient File</h4>
+                    </div>
+                    <span style={{ fontSize: '0.75rem', fontWeight: '600', color: 'var(--text-muted)', backgroundColor: 'var(--bg-tertiary)', padding: '0.2rem 0.5rem', borderRadius: '12px' }}>
+                      {profile.gender}, {profile.age} yrs
+                    </span>
                   </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
-                    <p style={{ fontSize: '0.85rem', color: 'var(--text-primary)' }}>
-                      <strong>Blood Group:</strong> {profile.bloodGroup || 'O-Positive'}
-                    </p>
-                    <p style={{ fontSize: '0.85rem', color: 'var(--text-primary)' }}>
-                      <strong>Allergies:</strong> <span style={{ color: 'var(--accent-rose)', fontWeight: '500' }}>{profile.allergies || 'None reported'}</span>
-                    </p>
-                    <p style={{ fontSize: '0.85rem', color: 'var(--text-primary)' }}>
-                      <strong>Medical History:</strong> {profile.medicalHistory || 'No chronic issues'}
-                    </p>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem 1rem', padding: '0.25rem 0' }}>
+                    <div style={{ fontSize: '0.8rem' }}>
+                      <span style={{ color: 'var(--text-muted)' }}>Blood Group:</span>
+                      <p style={{ fontWeight: '600', color: 'var(--text-primary)', marginTop: '0.1rem' }}>{profile.bloodGroup || 'O-Positive'}</p>
+                    </div>
+                    <div style={{ fontSize: '0.8rem' }}>
+                      <span style={{ color: 'var(--text-muted)' }}>Allergies:</span>
+                      <p style={{ fontWeight: '600', color: 'var(--accent-rose)', marginTop: '0.1rem' }}>{profile.allergies || 'None reported'}</p>
+                    </div>
+                    <div style={{ fontSize: '0.8rem', gridColumn: 'span 2' }}>
+                      <span style={{ color: 'var(--text-muted)' }}>Clinical History:</span>
+                      <p style={{ fontWeight: '500', color: 'var(--text-secondary)', marginTop: '0.1rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{profile.medicalHistory || 'No chronic issues'}</p>
+                    </div>
                   </div>
-                  <div style={{ marginTop: 'auto', borderTop: '1px solid var(--border-color)', paddingTop: '0.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                    <span>Emergency Contact: {profile.emergencyContact ? profile.emergencyContact.split(' - ')[0] : 'None'}</span>
-                    <button onClick={() => navigateToView('profile')} style={{ color: 'var(--accent-teal)', fontWeight: '600', border: 'none', background: 'transparent', cursor: 'pointer' }}>Edit</button>
+                  <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: '0.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                    <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '180px' }}>Contact: {profile.emergencyContact ? profile.emergencyContact.split(' - ')[0] : 'None'}</span>
+                    <button onClick={() => navigateToView('profile')} style={{ color: 'var(--accent-teal)', fontWeight: '700', border: 'none', background: 'transparent', cursor: 'pointer' }}>Edit File</button>
                   </div>
                 </div>
 
-                {/* Digital Health summary Card */}
-                <div className="health-card" style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', padding: '1rem 1.5rem', cursor: 'pointer' }} onClick={() => navigateToView('profile')}>
-                  <div style={{ width: '48px', height: '48px', borderRadius: '12px', background: 'linear-gradient(135deg, var(--accent-teal), var(--accent-blue))', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                    <QrCode size={24} color="#ffffff" />
+                {/* Notifications & System Alerts Center */}
+                <div className="health-card" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: '0.75rem' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      <div style={{ width: '32px', height: '32px', borderRadius: '50%', backgroundColor: 'var(--accent-blue-glow)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <Bell size={16} color="var(--accent-blue)" />
+                      </div>
+                      <h4 style={{ fontSize: '0.9rem', fontWeight: '700', color: 'var(--text-primary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Notification Hub</h4>
+                    </div>
+                    {notifications.filter(n => !n.read).length > 0 && (
+                      <span style={{ fontSize: '0.7rem', fontWeight: '700', backgroundColor: 'var(--accent-rose)', color: '#ffffff', padding: '0.15rem 0.45rem', borderRadius: '10px' }}>
+                        {notifications.filter(n => !n.read).length} New
+                      </span>
+                    )}
                   </div>
-                  <div>
-                    <h4 style={{ fontSize: '1rem', color: 'var(--text-primary)' }}>Health Summary Passport</h4>
-                    <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.25rem', lineHeight: '1.4' }}>
-                      Expand Digital Health Passport card, verify scan configurations, or print credentials paper records.
-                    </p>
+                  
+                  <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                    {notifications.length === 0 ? (
+                      <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontStyle: 'italic' }}>All system reports normal. No pending updates.</p>
+                    ) : (
+                      <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'flex-start' }}>
+                        <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: notifications[0].read ? 'transparent' : 'var(--accent-teal)', marginTop: '5px', flexShrink: 0 }} />
+                        <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', lineHeight: '1.3', display: '-webkit-box', WebkitLineClamp: '2', WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                          {notifications[0].text}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+
+                  <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: '0.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <button 
+                      onClick={() => navigateToView('profile')} 
+                      style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '0.25rem' }}
+                    >
+                      <QrCode size={12} /> Scan Credentials
+                    </button>
+                    <button 
+                      onClick={() => { setShowNotificationPanel(!showNotificationPanel); }} 
+                      style={{ color: 'var(--accent-blue)', fontWeight: '700', fontSize: '0.75rem' }}
+                    >
+                      Manage Alerts
+                    </button>
                   </div>
                 </div>
 
               </div>
 
-              {/* MIDDLE SECTION: Health Widgets & AI Tools */}
-              
-              {/* 1. Health Widgets */}
+              {/* 1. HEALTH OVERVIEW DAILY CARDS SECTION */}
               <div>
-                <h3 style={{ fontSize: '1.2rem', marginBottom: '1rem' }}>Daily Wellness Widgets</h3>
+                <h3 style={{ fontSize: '1.2rem', fontFamily: 'var(--font-display)', fontWeight: '700', marginBottom: '1rem', color: 'var(--text-primary)' }}>Daily Wellness Overview</h3>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1.5rem' }}>
                   
-                  {/* Wellness Score Widget */}
-                  <div className="health-card" style={{ display: 'flex', alignItems: 'center', gap: '1.25rem', justifyContent: 'center' }}>
-                    <div style={{ position: 'relative', width: '80px', height: '80px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                      <svg width="80" height="80" viewBox="0 0 36 36" style={{ transform: 'rotate(-90deg)' }}>
-                        <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="#e2e8f0" strokeWidth="3.5" />
+                  {/* Wellness Score Card */}
+                  <div className="health-card" style={{ display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
+                    <div style={{ position: 'relative', width: '75px', height: '75px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                      <svg width="75" height="75" viewBox="0 0 36 36" style={{ transform: 'rotate(-90deg)' }}>
+                        <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="var(--bg-tertiary)" strokeWidth="3.5" />
                         <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="var(--accent-teal)" strokeDasharray={`${wellnessScore}, 100`} strokeWidth="3.5" strokeLinecap="round" style={{ transition: 'stroke-dasharray 0.4s' }} />
                       </svg>
                       <div style={{ position: 'absolute', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                        <span style={{ fontSize: '1.3rem', fontWeight: '800', fontFamily: 'var(--font-display)', color: 'var(--text-primary)' }}>{wellnessScore}</span>
-                        <span style={{ fontSize: '0.5rem', color: 'var(--text-muted)', fontWeight: '700', textTransform: 'uppercase' }}>Index</span>
+                        <span style={{ fontSize: '1.25rem', fontWeight: '800', fontFamily: 'var(--font-display)', color: 'var(--text-primary)' }}>{wellnessScore}</span>
+                        <span style={{ fontSize: '0.45rem', color: 'var(--text-muted)', fontWeight: '700', textTransform: 'uppercase' }}>Index</span>
                       </div>
                     </div>
                     <div>
-                      <h4 style={{ fontSize: '0.95rem' }}>Wellness Score</h4>
-                      <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>Calculated daily target index status.</p>
+                      <h4 style={{ fontSize: '0.9rem', fontWeight: '700', color: 'var(--text-primary)' }}>Wellness Score</h4>
+                      <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.2rem' }}>
+                        {wellnessScore >= 70 ? 'On Track • Healthy State' : 'Adjustment Suggested'}
+                      </p>
                     </div>
                   </div>
 
@@ -1884,16 +1948,18 @@ export default function App() {
                   <div className="health-card" style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-                        <Moon size={16} color="var(--accent-teal)" />
-                        <span style={{ fontSize: '0.85rem', fontWeight: '600' }}>Sleep duration</span>
+                        <Moon size={16} color="var(--accent-purple)" />
+                        <span style={{ fontSize: '0.85rem', fontWeight: '600', color: 'var(--text-primary)' }}>Sleep</span>
                       </div>
-                      <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Goal: 8h</span>
+                      <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: '500' }}>Goal: 8 hrs</span>
                     </div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
-                      <span style={{ fontSize: '1.8rem', fontWeight: '800' }}>{todayLogs.sleep} <span style={{ fontSize: '0.85rem', fontWeight: '500', color: 'var(--text-secondary)' }}>hrs</span></span>
-                      <div style={{ display: 'flex', gap: '0.25rem' }}>
-                        <button onClick={() => adjustTracker('sleep', -0.5, 0, 24)} style={{ padding: '0.25rem 0.5rem', borderRadius: '4px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-tertiary)', cursor: 'pointer' }}>-</button>
-                        <button onClick={() => adjustTracker('sleep', 0.5, 0, 24)} style={{ padding: '0.25rem 0.5rem', borderRadius: '4px', backgroundColor: 'var(--accent-teal)', color: '#ffffff', border: 'none', cursor: 'pointer' }}>+</button>
+                      <span style={{ fontSize: '1.8rem', fontWeight: '800', fontFamily: 'var(--font-display)' }}>
+                        {todayLogs.sleep} <span style={{ fontSize: '0.85rem', fontWeight: '500', color: 'var(--text-secondary)' }}>hrs</span>
+                      </span>
+                      <div style={{ display: 'flex', gap: '0.35rem' }}>
+                        <button onClick={() => adjustTracker('sleep', -0.5, 0, 24)} style={{ width: '28px', height: '28px', borderRadius: '50%', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-tertiary)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>-</button>
+                        <button onClick={() => adjustTracker('sleep', 0.5, 0, 24)} style={{ width: '28px', height: '28px', borderRadius: '50%', backgroundColor: 'var(--accent-purple)', color: '#ffffff', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>+</button>
                       </div>
                     </div>
                   </div>
@@ -1903,15 +1969,17 @@ export default function App() {
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
                         <Droplet size={16} color="var(--accent-blue)" />
-                        <span style={{ fontSize: '0.85rem', fontWeight: '600' }}>Water intake</span>
+                        <span style={{ fontSize: '0.85rem', fontWeight: '600', color: 'var(--text-primary)' }}>Water</span>
                       </div>
-                      <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Goal: 2L</span>
+                      <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: '500' }}>Goal: 2L</span>
                     </div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
-                      <span style={{ fontSize: '1.8rem', fontWeight: '800' }}>{todayLogs.water} <span style={{ fontSize: '0.85rem', fontWeight: '500', color: 'var(--text-secondary)' }}>ml</span></span>
-                      <div style={{ display: 'flex', gap: '0.25rem' }}>
-                        <button onClick={() => adjustTracker('water', -250, 0)} style={{ padding: '0.25rem 0.5rem', borderRadius: '4px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-tertiary)', cursor: 'pointer' }}>-</button>
-                        <button onClick={() => adjustTracker('water', 250, 0)} style={{ padding: '0.25rem 0.5rem', borderRadius: '4px', backgroundColor: 'var(--accent-blue)', color: '#ffffff', border: 'none', cursor: 'pointer' }}>+</button>
+                      <span style={{ fontSize: '1.8rem', fontWeight: '800', fontFamily: 'var(--font-display)' }}>
+                        {todayLogs.water} <span style={{ fontSize: '0.85rem', fontWeight: '500', color: 'var(--text-secondary)' }}>ml</span>
+                      </span>
+                      <div style={{ display: 'flex', gap: '0.35rem' }}>
+                        <button onClick={() => adjustTracker('water', -250, 0)} style={{ width: '28px', height: '28px', borderRadius: '50%', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-tertiary)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>-</button>
+                        <button onClick={() => adjustTracker('water', 250, 0)} style={{ width: '28px', height: '28px', borderRadius: '50%', backgroundColor: 'var(--accent-blue)', color: '#ffffff', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>+</button>
                       </div>
                     </div>
                   </div>
@@ -1920,16 +1988,18 @@ export default function App() {
                   <div className="health-card" style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-                        <Dumbbell size={16} color="var(--accent-emerald)" />
-                        <span style={{ fontSize: '0.85rem', fontWeight: '600' }}>Exercise Time</span>
+                        <Dumbbell size={16} color="var(--accent-teal)" />
+                        <span style={{ fontSize: '0.85rem', fontWeight: '600', color: 'var(--text-primary)' }}>Exercise</span>
                       </div>
-                      <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Goal: 30m</span>
+                      <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: '500' }}>Goal: 30m</span>
                     </div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
-                      <span style={{ fontSize: '1.8rem', fontWeight: '800' }}>{todayLogs.exercise} <span style={{ fontSize: '0.85rem', fontWeight: '500', color: 'var(--text-secondary)' }}>mins</span></span>
-                      <div style={{ display: 'flex', gap: '0.25rem' }}>
-                        <button onClick={() => adjustTracker('exercise', -5, 0)} style={{ padding: '0.25rem 0.5rem', borderRadius: '4px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-tertiary)', cursor: 'pointer' }}>-</button>
-                        <button onClick={() => adjustTracker('exercise', 5, 0)} style={{ padding: '0.25rem 0.5rem', borderRadius: '4px', backgroundColor: 'var(--accent-emerald)', color: '#ffffff', border: 'none', cursor: 'pointer' }}>+</button>
+                      <span style={{ fontSize: '1.8rem', fontWeight: '800', fontFamily: 'var(--font-display)' }}>
+                        {todayLogs.exercise} <span style={{ fontSize: '0.85rem', fontWeight: '500', color: 'var(--text-secondary)' }}>mins</span>
+                      </span>
+                      <div style={{ display: 'flex', gap: '0.35rem' }}>
+                        <button onClick={() => adjustTracker('exercise', -5, 0)} style={{ width: '28px', height: '28px', borderRadius: '50%', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-tertiary)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>-</button>
+                        <button onClick={() => adjustTracker('exercise', 5, 0)} style={{ width: '28px', height: '28px', borderRadius: '50%', backgroundColor: 'var(--accent-teal)', color: '#ffffff', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>+</button>
                       </div>
                     </div>
                   </div>
@@ -1937,39 +2007,78 @@ export default function App() {
                 </div>
               </div>
 
-              {/* 2. AI Health Tools Cards */}
+              {/* 2. AI TOOLS INTERACTIVE SECTIONS (2x2 GRID) */}
               <div>
-                <h3 style={{ fontSize: '1.2rem', marginBottom: '1rem' }}>AI Health Tools</h3>
+                <h3 style={{ fontSize: '1.2rem', fontFamily: 'var(--font-display)', fontWeight: '700', marginBottom: '1rem', color: 'var(--text-primary)' }}>Clinical AI Workspace</h3>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '1.5rem' }}>
                   
-                  {/* Medicine Assistant Card */}
-                  <div className="health-card" style={{ display: 'flex', flexDirection: 'column', gap: '1rem', justifyItems: 'space-between' }}>
-                    <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
-                      <div style={{ width: '40px', height: '40px', borderRadius: '8px', backgroundColor: 'var(--accent-teal-glow)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        <Pill size={20} color="var(--accent-teal)" />
+                  {/* Card 1: AI Health Assistant */}
+                  <div className="health-card" style={{ display: 'flex', flexDirection: 'column', gap: '1rem', justifyContent: 'space-between', borderLeft: '4px solid var(--accent-purple)' }}>
+                    <div>
+                      <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', marginBottom: '0.5rem' }}>
+                        <div style={{ width: '40px', height: '40px', borderRadius: '8px', backgroundColor: 'var(--accent-purple-glow)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                          <Sparkles size={20} color="var(--accent-purple)" />
+                        </div>
+                        <h4 style={{ fontSize: '1.05rem', fontWeight: '700' }}>AI Health Assistant</h4>
                       </div>
-                      <h4 style={{ fontSize: '1.1rem' }}>Medicine Assistant</h4>
+                      <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: '1.5' }}>
+                        Consult our core clinical chatbot for safety, symptom analysis, medical facts lookup, and immediate local knowledge.
+                      </p>
                     </div>
-                    <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: '1.5', margin: 0 }}>
-                      Search medicines, understand uses, and explain prescriptions
-                    </p>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginTop: 'auto', paddingTop: '0.5rem' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                      <button 
+                        onClick={() => navigateToView('chat')}
+                        style={{ padding: '0.6rem 1rem', borderRadius: '8px', backgroundColor: 'var(--accent-purple)', color: '#ffffff', fontSize: '0.8rem', fontWeight: '600', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.35rem' }}
+                      >
+                        <MessageSquare size={14} /> Start Consultation
+                      </button>
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
+                        <button 
+                          onClick={() => navigateToView('symptoms')}
+                          style={{ padding: '0.5rem', borderRadius: '8px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-tertiary)', fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: '600', cursor: 'pointer', textAlign: 'center' }}
+                        >
+                          Check Symptoms
+                        </button>
+                        <button 
+                          onClick={() => { navigateToView('chat'); handleSendChatMessage("Give me general health advice based on my parameters"); }}
+                          style={{ padding: '0.5rem', borderRadius: '8px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-tertiary)', fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: '600', cursor: 'pointer', textAlign: 'center' }}
+                        >
+                          Get Health Advice
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Card 2: Medicine Assistant */}
+                  <div className="health-card" style={{ display: 'flex', flexDirection: 'column', gap: '1rem', justifyContent: 'space-between', borderLeft: '4px solid var(--accent-teal)' }}>
+                    <div>
+                      <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', marginBottom: '0.5rem' }}>
+                        <div style={{ width: '40px', height: '40px', borderRadius: '8px', backgroundColor: 'var(--accent-teal-glow)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                          <Pill size={20} color="var(--accent-teal)" />
+                        </div>
+                        <h4 style={{ fontSize: '1.05rem', fontWeight: '700' }}>Medicine Assistant</h4>
+                      </div>
+                      <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: '1.5' }}>
+                        Search clinical formulations databases, view allergy contradictions, and check details of prescribed medicines.
+                      </p>
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                       <button 
                         onClick={() => { navigateToView('chat'); setShowMedSearchPanel(true); }}
-                        style={{ padding: '0.5rem 1rem', borderRadius: '8px', backgroundColor: 'var(--accent-teal)', color: '#ffffff', fontSize: '0.8rem', fontWeight: '600', border: 'none', cursor: 'pointer', textAlign: 'center' }}
+                        style={{ padding: '0.6rem 1rem', borderRadius: '8px', backgroundColor: 'var(--accent-teal)', color: '#ffffff', fontSize: '0.8rem', fontWeight: '600', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.35rem' }}
                       >
-                        Search Medicine
+                        <Search size={14} /> Search Medicine Database
                       </button>
                       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
                         <button 
                           onClick={() => { navigateToView('chat'); setShowMedSearchPanel(true); setShowAttachmentDropdown(true); }}
-                          style={{ padding: '0.5rem', borderRadius: '8px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-tertiary)', fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: '500', cursor: 'pointer', textAlign: 'center' }}
+                          style={{ padding: '0.5rem', borderRadius: '8px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-tertiary)', fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: '600', cursor: 'pointer', textAlign: 'center' }}
                         >
-                          Upload Medicine Image
+                          Upload Label Image
                         </button>
                         <button 
                           onClick={() => { navigateToView('chat'); handleSendChatMessage("Explain my prescription"); }}
-                          style={{ padding: '0.5rem', borderRadius: '8px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-tertiary)', fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: '500', cursor: 'pointer', textAlign: 'center' }}
+                          style={{ padding: '0.5rem', borderRadius: '8px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-tertiary)', fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: '600', cursor: 'pointer', textAlign: 'center' }}
                         >
                           Explain Prescription
                         </button>
@@ -1977,28 +2086,30 @@ export default function App() {
                     </div>
                   </div>
 
-                  {/* Medical Report Analyzer Card */}
-                  <div className="health-card" style={{ display: 'flex', flexDirection: 'column', gap: '1rem', justifyItems: 'space-between' }}>
-                    <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
-                      <div style={{ width: '40px', height: '40px', borderRadius: '8px', backgroundColor: 'var(--accent-blue-glow)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        <FileText size={20} color="var(--accent-blue)" />
+                  {/* Card 3: Medical Report Analyzer */}
+                  <div className="health-card" style={{ display: 'flex', flexDirection: 'column', gap: '1rem', justifyContent: 'space-between', borderLeft: '4px solid var(--accent-blue)' }}>
+                    <div>
+                      <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', marginBottom: '0.5rem' }}>
+                        <div style={{ width: '40px', height: '40px', borderRadius: '8px', backgroundColor: 'var(--accent-blue-glow)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                          <FileText size={20} color="var(--accent-blue)" />
+                        </div>
+                        <h4 style={{ fontSize: '1.05rem', fontWeight: '700' }}>Medical Report Analyzer</h4>
                       </div>
-                      <h4 style={{ fontSize: '1.1rem' }}>Medical Report Analyzer</h4>
+                      <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: '1.5' }}>
+                        Upload lab reports, blood panels, and scans. The RAG engine translates metrics and identifies abnormalities.
+                      </p>
                     </div>
-                    <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: '1.5', margin: 0 }}>
-                      Upload medical reports and get AI-powered explanations
-                    </p>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginTop: 'auto', paddingTop: '0.5rem' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                       <button 
                         onClick={() => navigateToView('reports')}
-                        style={{ padding: '0.5rem 1rem', borderRadius: '8px', backgroundColor: 'var(--accent-blue)', color: '#ffffff', fontSize: '0.8rem', fontWeight: '600', border: 'none', cursor: 'pointer', textAlign: 'center' }}
+                        style={{ padding: '0.6rem 1rem', borderRadius: '8px', backgroundColor: 'var(--accent-blue)', color: '#ffffff', fontSize: '0.8rem', fontWeight: '600', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.35rem' }}
                       >
-                        Upload Report
+                        <Plus size={14} /> Upload Lab Report
                       </button>
                       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
                         <button 
                           onClick={() => navigateToView('reports')}
-                          style={{ padding: '0.5rem', borderRadius: '8px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-tertiary)', fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: '500', cursor: 'pointer', textAlign: 'center' }}
+                          style={{ padding: '0.5rem', borderRadius: '8px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-tertiary)', fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: '600', cursor: 'pointer', textAlign: 'center' }}
                         >
                           Analyze Report
                         </button>
@@ -2009,7 +2120,7 @@ export default function App() {
                               document.getElementById('reports-history')?.scrollIntoView({ behavior: 'smooth' });
                             }, 500);
                           }}
-                          style={{ padding: '0.5rem', borderRadius: '8px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-tertiary)', fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: '500', cursor: 'pointer', textAlign: 'center' }}
+                          style={{ padding: '0.5rem', borderRadius: '8px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-tertiary)', fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: '600', cursor: 'pointer', textAlign: 'center' }}
                         >
                           View Report History
                         </button>
@@ -2017,29 +2128,31 @@ export default function App() {
                     </div>
                   </div>
 
-                  {/* Voice Assistant Card */}
-                  <div className="health-card" style={{ display: 'flex', flexDirection: 'column', gap: '1rem', justifyItems: 'space-between' }}>
-                    <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
-                      <div style={{ width: '40px', height: '40px', borderRadius: '8px', backgroundColor: 'var(--accent-teal-glow)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        <Mic size={20} color="var(--accent-teal)" />
+                  {/* Card 4: Voice Assistant */}
+                  <div className="health-card" style={{ display: 'flex', flexDirection: 'column', gap: '1rem', justifyContent: 'space-between', borderLeft: '4px solid var(--accent-purple)' }}>
+                    <div>
+                      <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', marginBottom: '0.5rem' }}>
+                        <div style={{ width: '40px', height: '40px', borderRadius: '8px', backgroundColor: 'linear-gradient(135deg, var(--accent-teal-glow), var(--accent-purple-glow))', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                          <Mic size={20} color="var(--accent-purple)" />
+                        </div>
+                        <h4 style={{ fontSize: '1.05rem', fontWeight: '700' }}>Voice Assistant HUD</h4>
                       </div>
-                      <h4 style={{ fontSize: '1.1rem' }}>Voice Assistant</h4>
+                      <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: '1.5' }}>
+                        Speak naturally in English, Hindi, or Hinglish. Custom speed, accents, and local translations available.
+                      </p>
                     </div>
-                    <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: '1.5', margin: 0 }}>
-                      Speak to your HealthAI companion in English, Hindi, or Hinglish. Customize speed rates and voice genders.
-                    </p>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginTop: 'auto', paddingTop: '0.5rem' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                       <button 
                         onClick={() => { navigateToView('chat'); setTimeout(() => { toggleListening(); }, 500); }}
-                        style={{ padding: '0.5rem 1rem', borderRadius: '8px', backgroundColor: 'var(--accent-teal)', color: '#ffffff', fontSize: '0.8rem', fontWeight: '600', border: 'none', cursor: 'pointer', textAlign: 'center' }}
+                        style={{ padding: '0.6rem 1rem', borderRadius: '8px', background: 'linear-gradient(135deg, var(--accent-purple), var(--accent-teal))', color: '#ffffff', fontSize: '0.8rem', fontWeight: '600', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.35rem' }}
                       >
-                        Speak Now
+                        <Volume2 size={14} /> Speak Now
                       </button>
                       <button 
                         onClick={() => navigateToView('settings')}
-                        style={{ padding: '0.5rem', borderRadius: '8px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-tertiary)', fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: '500', cursor: 'pointer', textAlign: 'center' }}
+                        style={{ padding: '0.5rem', borderRadius: '8px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-tertiary)', fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: '600', cursor: 'pointer', textAlign: 'center' }}
                       >
-                        Voice Settings
+                        Voice Preferences
                       </button>
                     </div>
                   </div>
@@ -2047,53 +2160,58 @@ export default function App() {
                 </div>
               </div>
 
-              {/* 3. More Resources & Safety Tools Section */}
-              <div className="health-card" style={{ padding: '1.5rem', backgroundColor: 'var(--bg-tertiary)' }}>
-                <h4 style={{ fontSize: '0.95rem', fontWeight: '700', marginBottom: '0.75rem' }}>More Clinical Resources & Emergency Tools</h4>
-                <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
-                  <button onClick={() => navigateToView('symptoms')} style={{ padding: '0.5rem 1rem', borderRadius: '20px', border: '1px solid var(--border-color)', backgroundColor: '#ffffff', fontSize: '0.8rem', color: 'var(--text-secondary)', fontWeight: '600', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-                    <Stethoscope size={14} color="var(--accent-blue)" /> Symptom Checker
+              {/* 3. SAFETY AND EMERGENCY SHORTCUTS */}
+              <div className="health-card" style={{ padding: '1.25rem 1.5rem', backgroundColor: 'var(--bg-tertiary)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                  <div style={{ width: '36px', height: '36px', borderRadius: '50%', backgroundColor: 'rgba(239, 68, 68, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <ShieldAlert size={18} color="var(--accent-rose)" />
+                  </div>
+                  <div>
+                    <h4 style={{ fontSize: '0.9rem', fontWeight: '700' }}>Emergency SOS Tools</h4>
+                    <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.1rem' }}>Instant first aid instructions, emergency contacts, and maps.</p>
+                  </div>
+                </div>
+                <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                  <button onClick={() => navigateToView('emergency')} style={{ padding: '0.45rem 1rem', borderRadius: '20px', backgroundColor: 'var(--accent-rose)', color: '#ffffff', fontSize: '0.75rem', fontWeight: '700', cursor: 'pointer' }}>
+                    Trigger SOS Alert
                   </button>
-                  <button onClick={() => navigateToView('risk')} style={{ padding: '0.5rem 1rem', borderRadius: '20px', border: '1px solid var(--border-color)', backgroundColor: '#ffffff', fontSize: '0.8rem', color: 'var(--text-secondary)', fontWeight: '600', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-                    <ClipboardList size={14} color="var(--accent-teal)" /> Health Assessment
+                  <button onClick={() => navigateToView('symptoms')} style={{ padding: '0.45rem 1rem', borderRadius: '20px', border: '1px solid var(--border-color)', backgroundColor: '#ffffff', fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: '600', cursor: 'pointer' }}>
+                    Symptom Index
                   </button>
-                  <button onClick={() => navigateToView('education')} style={{ padding: '0.5rem 1rem', borderRadius: '20px', border: '1px solid var(--border-color)', backgroundColor: '#ffffff', fontSize: '0.8rem', color: 'var(--text-secondary)', fontWeight: '600', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-                    <BookOpen size={14} color="var(--accent-blue)" /> Health Library
-                  </button>
-                  <button onClick={() => navigateToView('emergency')} style={{ padding: '0.5rem 1rem', borderRadius: '20px', border: '1px solid rgba(225, 29, 72, 0.2)', backgroundColor: 'var(--accent-rose-glow)', fontSize: '0.8rem', color: 'var(--accent-rose)', fontWeight: '700', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-                    <ShieldAlert size={14} color="var(--accent-rose)" /> Emergency SOS (First Aid)
+                  <button onClick={() => navigateToView('education')} style={{ padding: '0.45rem 1rem', borderRadius: '20px', border: '1px solid var(--border-color)', backgroundColor: '#ffffff', fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: '600', cursor: 'pointer' }}>
+                    Library
                   </button>
                 </div>
               </div>
 
-              {/* BOTTOM SECTION: Recent Conversations & Upcoming Appointments */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))', gap: '1.5rem' }}>
+              {/* BOTTOM SECTION: RECENT CONVERSATIONS, APPOINTMENTS, AND INSIGHTS */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '1.5rem' }}>
                 
-                {/* Recent AI Conversations */}
-                <div className="health-card" style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                {/* Recent Consultations Card */}
+                <div className="health-card" style={{ display: 'flex', flexDirection: 'column', gap: '1rem', minHeight: '260px' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <h3 style={{ fontSize: '1.1rem' }}>Recent AI Consultations</h3>
-                    <button onClick={() => navigateToView('chat')} style={{ fontSize: '0.8rem', color: 'var(--accent-teal)', fontWeight: '600', border: 'none', background: 'transparent', cursor: 'pointer' }}>New Chat</button>
+                    <h3 style={{ fontSize: '1.1rem', fontFamily: 'var(--font-display)', fontWeight: '700' }}>Recent Consultations</h3>
+                    <button onClick={() => navigateToView('chat')} style={{ fontSize: '0.8rem', color: 'var(--accent-teal)', fontWeight: '700' }}>New Chat</button>
                   </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', flex: 1 }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', flex: 1, overflowY: 'auto', maxHeight: '180px' }}>
                     {chats.length === 0 ? (
-                      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '1.5rem', border: '1.5px dashed var(--border-color)', borderRadius: '12px', gap: '0.5rem' }}>
-                        <MessageSquare size={20} color="var(--text-muted)" />
-                        <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', textAlign: 'center' }}>No recent consultations. Connect with your assistant to begin.</p>
+                      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '1rem', border: '1.5px dashed var(--border-color)', borderRadius: '12px', gap: '0.5rem' }}>
+                        <MessageSquare size={18} color="var(--text-muted)" />
+                        <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textAlign: 'center' }}>No recent chats. Start a consultation to begin.</p>
                       </div>
                     ) : (
                       chats.slice(0, 3).map(c => (
                         <div 
                           key={c.id} 
                           onClick={() => { setActiveChatId(c.id); navigateToView('chat'); }}
-                          style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.75rem 1rem', borderRadius: '8px', backgroundColor: 'var(--bg-tertiary)', cursor: 'pointer', transition: 'background-color 0.15s' }}
+                          style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.75rem 1rem', borderRadius: '12px', backgroundColor: 'var(--bg-tertiary)', cursor: 'pointer', transition: 'background-color 0.15s' }}
                           className="recent-chat-item"
                         >
-                          <MessageSquare size={16} color="var(--accent-teal)" />
-                          <span style={{ fontSize: '0.85rem', fontWeight: '500', color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '240px' }}>
-                            {c.title || "Active Consultation Session"}
+                          <MessageSquare size={16} color="var(--accent-teal)" style={{ flexShrink: 0 }} />
+                          <span style={{ fontSize: '0.8rem', fontWeight: '600', color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1 }}>
+                            {c.title || "Consultation Session"}
                           </span>
-                          <span style={{ marginLeft: 'auto', fontSize: '0.7rem', color: 'var(--text-muted)' }}>
+                          <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', flexShrink: 0 }}>
                             {c.messages && c.messages.length > 0 ? c.messages[c.messages.length - 1].timestamp ? new Date(c.messages[c.messages.length - 1].timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Just now' : ''}
                           </span>
                         </div>
@@ -2102,36 +2220,58 @@ export default function App() {
                   </div>
                 </div>
 
-                {/* Upcoming Appointments */}
-                <div className="health-card" style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                {/* Upcoming Appointments Card */}
+                <div className="health-card" style={{ display: 'flex', flexDirection: 'column', gap: '1rem', minHeight: '260px' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <h3 style={{ fontSize: '1.1rem' }}>Upcoming Appointments</h3>
-                    <button onClick={() => navigateToView('appointments')} style={{ fontSize: '0.8rem', color: 'var(--accent-teal)', fontWeight: '600', border: 'none', background: 'transparent', cursor: 'pointer' }}>Manage</button>
+                    <h3 style={{ fontSize: '1.1rem', fontFamily: 'var(--font-display)', fontWeight: '700' }}>Scheduled Consults</h3>
+                    <button onClick={() => navigateToView('appointments')} style={{ fontSize: '0.8rem', color: 'var(--accent-teal)', fontWeight: '700' }}>Manage</button>
                   </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', flex: 1 }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', flex: 1, overflowY: 'auto', maxHeight: '180px' }}>
                     {bookedAppointments.length === 0 ? (
-                      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '1.5rem', border: '1.5px dashed var(--border-color)', borderRadius: '12px', gap: '0.5rem' }}>
-                        <Calendar size={20} color="var(--text-muted)" />
-                        <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>No upcoming appointments scheduled.</p>
-                        <button onClick={() => navigateToView('appointments')} style={{ fontSize: '0.8rem', color: 'var(--accent-teal)', fontWeight: '600', border: 'none', background: 'transparent', cursor: 'pointer' }}>Schedule Consultation</button>
+                      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '1rem', border: '1.5px dashed var(--border-color)', borderRadius: '12px', gap: '0.5rem' }}>
+                        <Calendar size={18} color="var(--text-muted)" />
+                        <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textAlign: 'center' }}>No upcoming doctor appointments scheduled.</p>
+                        <button onClick={() => navigateToView('appointments')} style={{ fontSize: '0.75rem', color: 'var(--accent-teal)', fontWeight: '700', marginTop: '0.25rem' }}>Schedule Now</button>
                       </div>
                     ) : (
                       bookedAppointments.slice(0, 3).map(apt => (
-                        <div key={apt.id} style={{ display: 'flex', gap: '1rem', padding: '0.75rem 1rem', borderRadius: '12px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-card-hover)', alignItems: 'center' }}>
-                          <div style={{ width: '36px', height: '36px', borderRadius: '8px', backgroundColor: 'var(--accent-blue-glow)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                            <Stethoscope color="var(--accent-blue)" size={18} />
+                        <div key={apt.id} style={{ display: 'flex', gap: '0.75rem', padding: '0.75rem 1rem', borderRadius: '12px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-card-hover)', alignItems: 'center' }}>
+                          <div style={{ width: '32px', height: '32px', borderRadius: '8px', backgroundColor: 'var(--accent-blue-glow)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                            <Stethoscope color="var(--accent-blue)" size={16} />
                           </div>
-                          <div>
-                            <h4 style={{ fontSize: '0.85rem', color: 'var(--text-primary)' }}>{apt.doctorName}</h4>
-                            <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>{apt.doctorSpecialty}</p>
-                            <p style={{ fontSize: '0.7rem', fontWeight: '500', color: 'var(--text-secondary)', marginTop: '0.15rem' }}>
-                              {apt.date} at {apt.time}
-                            </p>
+                          <div style={{ minWidth: 0, flex: 1 }}>
+                            <h4 style={{ fontSize: '0.8rem', fontWeight: '700', color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{apt.doctorName}</h4>
+                            <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{apt.doctorSpecialty} • {apt.date} at {apt.time}</p>
                           </div>
-                          <span style={{ marginLeft: 'auto', fontSize: '0.65rem', height: 'fit-content', padding: '0.15rem 0.4rem', borderRadius: '8px', backgroundColor: 'var(--accent-emerald-glow)', color: 'var(--accent-emerald)', fontWeight: '600' }}>Confirmed</span>
+                          <span style={{ flexShrink: 0, fontSize: '0.65rem', padding: '0.15rem 0.4rem', borderRadius: '8px', backgroundColor: 'var(--accent-emerald-glow)', color: 'var(--accent-emerald)', fontWeight: '600' }}>Confirmed</span>
                         </div>
                       ))
                     )}
+                  </div>
+                </div>
+
+                {/* Health Insights Feed Card */}
+                <div className="health-card" style={{ display: 'flex', flexDirection: 'column', gap: '1rem', minHeight: '260px' }}>
+                  <h3 style={{ fontSize: '1.1rem', fontFamily: 'var(--font-display)', fontWeight: '700' }}>Health Insights</h3>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', flex: 1, overflowY: 'auto', maxHeight: '180px' }}>
+                    {generateDashboardInsights().map((insight, idx) => {
+                      const isWarning = insight.type === 'warning';
+                      const isSuccess = insight.type === 'success';
+                      const bg = isWarning ? 'rgba(239, 68, 68, 0.08)' : isSuccess ? 'rgba(16, 185, 129, 0.08)' : 'rgba(37, 99, 235, 0.08)';
+                      const border = isWarning ? 'rgba(239, 68, 68, 0.15)' : isSuccess ? 'rgba(16, 185, 129, 0.15)' : 'rgba(37, 99, 235, 0.15)';
+                      const color = isWarning ? 'var(--accent-rose)' : isSuccess ? 'var(--accent-emerald)' : 'var(--accent-blue)';
+                      
+                      return (
+                        <div key={idx} style={{ display: 'flex', gap: '0.75rem', padding: '0.75rem 1rem', borderRadius: '12px', backgroundColor: bg, border: `1px solid ${border}`, alignItems: 'flex-start' }}>
+                          <div style={{ marginTop: '2px', flexShrink: 0 }}>
+                            {insight.icon === 'droplet' ? <Droplet size={14} color={color} /> : insight.icon === 'moon' ? <Moon size={14} color={color} /> : <Activity size={14} color={color} />}
+                          </div>
+                          <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', lineHeight: '1.4' }}>
+                            {insight.text}
+                          </p>
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
 
@@ -2857,16 +2997,17 @@ export default function App() {
 
                                     <div style={{
                                       padding: '1rem 1.25rem',
-                                      paddingBottom: '1.75rem',
-                                      borderRadius: isAi ? '0 16px 16px 16px' : '16px 0 16px 16px',
-                                      backgroundColor: isAi ? '#ffffff' : 'var(--accent-teal)',
+                                      paddingBottom: '1.6rem',
+                                      borderRadius: isAi ? '18px 18px 18px 4px' : '18px 18px 4px 18px',
+                                      backgroundColor: isAi ? '#ffffff' : 'var(--accent-blue)',
                                       color: isAi ? 'var(--text-primary)' : '#ffffff',
                                       border: isAi ? '1px solid var(--border-color)' : 'none',
-                                      boxShadow: isAi ? 'var(--shadow-sm)' : 'none',
+                                      boxShadow: 'var(--shadow-sm)',
                                       fontSize: '0.9rem',
                                       lineHeight: '1.5',
                                       whiteSpace: 'pre-line',
-                                      position: 'relative'
+                                      position: 'relative',
+                                      maxWidth: '100%'
                                     }}>
                                       {m.text}
                                       <span style={{
@@ -2967,60 +3108,90 @@ export default function App() {
                     {/* Input Area */}
                     <div style={{ padding: '1.5rem 2rem', backgroundColor: '#ffffff', borderTop: '1px solid var(--border-color)' }}>
                       
-                      {/* Listening Pulse Overlay */}
-                      {isListening && (
+                      {/* STATEFUL VOICE ASSISTANT HUD OVERLAY */}
+                      {voiceState !== 'inactive' && (
                         <div className="glass-panel" style={{
-                          padding: '1rem', margin: '0 0 1rem 0', borderRadius: '12px',
-                          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                          backgroundColor: '#fff5f5', border: '1px solid var(--accent-rose-glow)'
+                          padding: '1.25rem',
+                          margin: '0 0 1.25rem 0',
+                          borderRadius: '16px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          border: `1.5px solid ${voiceState === 'listening' ? 'var(--accent-rose)' : voiceState === 'processing' ? 'var(--accent-purple)' : 'var(--accent-teal)'}`,
+                          backgroundColor: voiceState === 'listening' ? 'rgba(239, 68, 68, 0.04)' : voiceState === 'processing' ? 'var(--accent-purple-glow)' : 'var(--accent-teal-glow)',
+                          boxShadow: 'var(--shadow-lg)',
+                          animation: 'slide-down 0.25s ease'
                         }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                            <span style={{ fontSize: '0.85rem', color: 'var(--accent-rose)', fontWeight: '700' }}>
-                              🎤 LISTENING VOICE...
-                            </span>
-                            <div className="voice-wave-container">
-                              <div className="voice-wave-bar" />
-                              <div className="voice-wave-bar" />
-                              <div className="voice-wave-bar" />
-                              <div className="voice-wave-bar" />
-                              <div className="voice-wave-bar" />
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flex: 1 }}>
+                            
+                            {/* Icon Indicator */}
+                            <div style={{ 
+                              width: '40px', height: '40px', borderRadius: '50%', 
+                              backgroundColor: voiceState === 'listening' ? 'rgba(239, 68, 68, 0.15)' : voiceState === 'processing' ? 'var(--accent-purple-glow)' : 'var(--accent-teal-glow)', 
+                              display: 'flex', alignItems: 'center', justifyContent: 'center',
+                              animation: voiceState === 'listening' ? 'sos-pulse-ring-btn 2s infinite' : 'none'
+                            }}>
+                              {voiceState === 'listening' && <MicOff size={18} color="var(--accent-rose)" />}
+                              {voiceState === 'processing' && <RefreshCcw size={18} color="var(--accent-purple)" style={{ animation: 'spin 1.5s linear infinite' }} />}
+                              {voiceState === 'speaking' && <Volume2 size={18} color="var(--accent-teal)" />}
                             </div>
-                          </div>
-                          <button 
-                            onClick={toggleListening} 
-                            style={{
-                              padding: '0.45rem 1rem', borderRadius: '6px', 
-                              backgroundColor: 'var(--accent-rose)', color: '#ffffff',
-                              fontSize: '0.8rem', fontWeight: '600'
-                            }}
-                          >
-                            Cancel Mic
-                          </button>
-                        </div>
-                      )}
 
-                      {/* Playing Speech Utterance Overlay */}
-                      {isPlayingVoice && (
-                        <div className="glass-panel" style={{
-                          padding: '1rem', margin: '0 0 1rem 0', borderRadius: '12px',
-                          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                          backgroundColor: 'var(--accent-teal-glow)', border: '1px solid var(--accent-teal)'
-                        }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                            <Volume2 size={18} color="var(--accent-teal)" style={{ animation: 'bounce-bar 1.5s infinite alternate' }} />
-                            <span style={{ fontSize: '0.85rem', color: 'var(--accent-teal)', fontWeight: '700' }}>
-                              Speaking Voice Response...
-                            </span>
+                            {/* Status and Waveform */}
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', flex: 1 }}>
+                              <span style={{ 
+                                fontSize: '0.78rem', 
+                                fontWeight: '700', 
+                                textTransform: 'uppercase', 
+                                letterSpacing: '0.05em',
+                                color: voiceState === 'listening' ? 'var(--accent-rose)' : voiceState === 'processing' ? 'var(--accent-purple)' : 'var(--accent-teal)'
+                              }}>
+                                {voiceState === 'listening' && 'Voice Assistant: Listening...'}
+                                {voiceState === 'processing' && 'Voice Assistant: Processing...'}
+                                {voiceState === 'speaking' && 'Voice Assistant: Speaking...'}
+                              </span>
+                              <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', margin: 0 }}>
+                                {voiceState === 'listening' && 'Say your health questions or symptoms now...'}
+                                {voiceState === 'processing' && 'Whisper AI is translating audio coordinates...'}
+                                {voiceState === 'speaking' && 'Reading back clinical guidelines response...'}
+                              </p>
+                            </div>
+
+                            {/* Bouncing Audio Waveform (for listening and speaking states) */}
+                            {(voiceState === 'listening' || voiceState === 'speaking') && (
+                              <div className="voice-wave-container" style={{ flexShrink: 0 }}>
+                                <div className="voice-wave-bar" style={{ animationPlayState: 'running' }} />
+                                <div className="voice-wave-bar" style={{ animationPlayState: 'running', animationDelay: '0.1s' }} />
+                                <div className="voice-wave-bar" style={{ animationPlayState: 'running', animationDelay: '0.2s' }} />
+                                <div className="voice-wave-bar" style={{ animationPlayState: 'running', animationDelay: '0.3s' }} />
+                                <div className="voice-wave-bar" style={{ animationPlayState: 'running', animationDelay: '0.4s' }} />
+                              </div>
+                            )}
+
                           </div>
+
                           <button 
-                            onClick={stopSpeaking} 
+                            onClick={() => {
+                              if (voiceState === 'speaking') {
+                                stopSpeaking();
+                              } else {
+                                toggleListening();
+                              }
+                            }} 
                             style={{
-                              padding: '0.45rem 1rem', borderRadius: '6px', 
-                              backgroundColor: 'var(--accent-teal)', color: '#ffffff',
-                              fontSize: '0.8rem', fontWeight: '600'
+                              padding: '0.5rem 1rem', 
+                              borderRadius: '8px', 
+                              backgroundColor: voiceState === 'listening' ? 'var(--accent-rose)' : voiceState === 'processing' ? 'var(--text-muted)' : 'var(--accent-teal)', 
+                              color: '#ffffff',
+                              fontSize: '0.8rem', 
+                              fontWeight: '700',
+                              border: 'none',
+                              cursor: 'pointer',
+                              marginLeft: '1rem'
                             }}
                           >
-                            Mute Speech
+                            {voiceState === 'listening' && 'Cancel Mic'}
+                            {voiceState === 'processing' && 'Cancel'}
+                            {voiceState === 'speaking' && 'Mute Voice'}
                           </button>
                         </div>
                       )}
@@ -3033,14 +3204,14 @@ export default function App() {
                             type="button"
                             onClick={() => setShowAttachmentDropdown(!showAttachmentDropdown)}
                             style={{
-                              padding: '0.4rem 0.8rem', borderRadius: '20px', border: '1.5px solid var(--accent-teal)',
+                              padding: '0.4rem 0.8rem', borderRadius: '20px', border: '1.5px solid var(--border-color)',
                               backgroundColor: showAttachmentDropdown ? 'var(--accent-teal-glow)' : 'transparent',
-                              color: 'var(--accent-teal)', fontSize: '0.78rem', fontWeight: '600',
+                              color: 'var(--text-secondary)', fontSize: '0.78rem', fontWeight: '600',
                               display: 'flex', alignItems: 'center', gap: '0.35rem', cursor: 'pointer',
                               transition: 'all 0.15s ease'
                             }}
                           >
-                            <span>📎 Simulate Upload</span>
+                            <span>📎 Simulated Attachment</span>
                           </button>
 
                           <button
@@ -3049,9 +3220,9 @@ export default function App() {
                               setShowMedSearchPanel(!showMedSearchPanel);
                             }}
                             style={{
-                              padding: '0.4rem 0.8rem', borderRadius: '20px', border: '1.5px solid var(--accent-teal)',
+                              padding: '0.4rem 0.8rem', borderRadius: '20px', border: '1.5px solid var(--border-color)',
                               backgroundColor: showMedSearchPanel ? 'var(--accent-teal-glow)' : 'transparent',
-                              color: 'var(--accent-teal)', fontSize: '0.78rem', fontWeight: '600',
+                              color: 'var(--text-secondary)', fontSize: '0.78rem', fontWeight: '600',
                               display: 'flex', alignItems: 'center', gap: '0.35rem', cursor: 'pointer',
                               transition: 'all 0.15s ease'
                             }}
@@ -3063,7 +3234,7 @@ export default function App() {
                             type="button"
                             onClick={() => handleSendChatMessage("Explain my prescription")}
                             style={{
-                              padding: '0.4rem 0.8rem', borderRadius: '20px', border: '1.5px solid var(--border-color)',
+                              padding: '0.4rem 0.8rem', borderRadius: '20px', border: '1px solid var(--border-color)',
                               backgroundColor: '#ffffff', color: 'var(--text-secondary)', fontSize: '0.78rem', fontWeight: '500',
                               display: 'flex', alignItems: 'center', gap: '0.35rem', cursor: 'pointer',
                               transition: 'all 0.15s ease'
@@ -3076,7 +3247,7 @@ export default function App() {
                             type="button"
                             onClick={() => handleSendChatMessage("Check Safety Information for current medications")}
                             style={{
-                              padding: '0.4rem 0.8rem', borderRadius: '20px', border: '1.5px solid var(--border-color)',
+                              padding: '0.4rem 0.8rem', borderRadius: '20px', border: '1px solid var(--border-color)',
                               backgroundColor: '#ffffff', color: 'var(--text-secondary)', fontSize: '0.78rem', fontWeight: '500',
                               display: 'flex', alignItems: 'center', gap: '0.35rem', cursor: 'pointer',
                               transition: 'all 0.15s ease'
@@ -3235,10 +3406,10 @@ export default function App() {
                       <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.75rem', flexWrap: 'wrap' }}>
                         <button
                           type="button"
-                          onClick={() => navigateToView('symptoms')}
+                          onClick={() => navigateToView('reports')}
                           style={{
-                            padding: '0.4rem 0.8rem',
-                            borderRadius: '15px',
+                            padding: '0.45rem 0.9rem',
+                            borderRadius: '20px',
                             border: '1px solid var(--border-color)',
                             backgroundColor: '#ffffff',
                             color: 'var(--text-secondary)',
@@ -3251,14 +3422,14 @@ export default function App() {
                             transition: 'all 0.15s ease'
                           }}
                         >
-                          🔍 Check symptoms
+                          📄 Analyze my report
                         </button>
                         <button
                           type="button"
-                          onClick={() => navigateToView('medicines')}
+                          onClick={() => { navigateToView('chat'); setShowMedSearchPanel(true); }}
                           style={{
-                            padding: '0.4rem 0.8rem',
-                            borderRadius: '15px',
+                            padding: '0.45rem 0.9rem',
+                            borderRadius: '20px',
                             border: '1px solid var(--border-color)',
                             backgroundColor: '#ffffff',
                             color: 'var(--text-secondary)',
@@ -3275,10 +3446,10 @@ export default function App() {
                         </button>
                         <button
                           type="button"
-                          onClick={() => navigateToView('reports')}
+                          onClick={() => navigateToView('symptoms')}
                           style={{
-                            padding: '0.4rem 0.8rem',
-                            borderRadius: '15px',
+                            padding: '0.45rem 0.9rem',
+                            borderRadius: '20px',
                             border: '1px solid var(--border-color)',
                             backgroundColor: '#ffffff',
                             color: 'var(--text-secondary)',
@@ -3291,14 +3462,14 @@ export default function App() {
                             transition: 'all 0.15s ease'
                           }}
                         >
-                          📄 Analyze report
+                          🔍 Check symptoms
                         </button>
                         <button
                           type="button"
-                          onClick={() => handleSendChatMessage("Give health tips")}
+                          onClick={() => handleSendChatMessage("Give me general health advice based on my parameters")}
                           style={{
-                            padding: '0.4rem 0.8rem',
-                            borderRadius: '15px',
+                            padding: '0.45rem 0.9rem',
+                            borderRadius: '20px',
                             border: '1px solid var(--border-color)',
                             backgroundColor: '#ffffff',
                             color: 'var(--text-secondary)',
@@ -3311,7 +3482,7 @@ export default function App() {
                             transition: 'all 0.15s ease'
                           }}
                         >
-                          💡 Give health tips
+                          💡 Health advice
                         </button>
                       </div>
 
@@ -3392,19 +3563,35 @@ export default function App() {
                         <button
                           type="button"
                           onClick={toggleListening}
-                          className={isListening ? 'mic-glow-pulse' : ''}
+                          className={voiceState === 'listening' ? 'mic-glow-pulse' : ''}
                           style={{
                             width: '46px', height: '46px', borderRadius: '8px',
-                            display: 'flex', alignItems: 'center', justifySelf: 'center', justifyContent: 'center',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
                             border: '1px solid var(--border-color)',
-                            backgroundColor: isListening ? '#ffe4e6' : 'var(--bg-tertiary)',
-                            color: isListening ? 'var(--accent-rose)' : 'var(--text-secondary)',
+                            backgroundColor: voiceState === 'listening' ? '#ffe4e6' : 'var(--bg-tertiary)',
+                            color: voiceState === 'listening' ? 'var(--accent-rose)' : 'var(--text-secondary)',
                             transition: 'all 0.2s ease',
                           }}
-                          title={isListening ? 'Stop recording voice query' : 'Record voice query'}
-                          aria-label={isListening ? 'Stop recording voice' : 'Record voice query'}
+                          title={voiceState === 'listening' ? 'Stop recording voice query' : 'Record voice query'}
+                          aria-label={voiceState === 'listening' ? 'Stop recording voice' : 'Record voice query'}
                         >
-                          {isListening ? <MicOff size={20} /> : <Mic size={20} />}
+                          {voiceState === 'listening' ? <MicOff size={20} /> : <Mic size={20} />}
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => setShowAttachmentDropdown(!showAttachmentDropdown)}
+                          style={{
+                            width: '46px', height: '46px', borderRadius: '8px',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            border: '1px solid var(--border-color)',
+                            backgroundColor: showAttachmentDropdown ? 'var(--accent-teal-glow)' : 'var(--bg-tertiary)',
+                            color: 'var(--accent-teal)',
+                            transition: 'all 0.2s ease',
+                          }}
+                          title="Simulate Document Attachment"
+                        >
+                          <Plus size={20} />
                         </button>
 
                         <button
@@ -5716,6 +5903,47 @@ export default function App() {
                   Close Window
                 </button>
               </div>
+            </div>
+          )}
+
+          {/* Mobile bottom navigation bar */}
+          {isAuthenticated && (
+            <div className="mobile-bottom-nav">
+              <button 
+                onClick={() => navigateToView('dashboard')} 
+                style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '0.25rem', color: view === 'dashboard' ? 'var(--accent-teal)' : 'var(--text-muted)', border: 'none', background: 'transparent' }}
+              >
+                <Activity size={18} />
+                <span style={{ fontSize: '0.65rem', fontWeight: view === 'dashboard' ? '700' : '500' }}>Dashboard</span>
+              </button>
+              <button 
+                onClick={() => navigateToView('chat')} 
+                style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '0.25rem', color: view === 'chat' ? 'var(--accent-teal)' : 'var(--text-muted)', border: 'none', background: 'transparent' }}
+              >
+                <MessageSquare size={18} />
+                <span style={{ fontSize: '0.65rem', fontWeight: view === 'chat' ? '700' : '500' }}>AI Chat</span>
+              </button>
+              <button 
+                onClick={() => navigateToView('tracker')} 
+                style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '0.25rem', color: view === 'tracker' ? 'var(--accent-teal)' : 'var(--text-muted)', border: 'none', background: 'transparent' }}
+              >
+                <HeartPulse size={18} />
+                <span style={{ fontSize: '0.65rem', fontWeight: view === 'tracker' ? '700' : '500' }}>Tracker</span>
+              </button>
+              <button 
+                onClick={() => navigateToView('appointments')} 
+                style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '0.25rem', color: view === 'appointments' ? 'var(--accent-teal)' : 'var(--text-muted)', border: 'none', background: 'transparent' }}
+              >
+                <Calendar size={18} />
+                <span style={{ fontSize: '0.65rem', fontWeight: view === 'appointments' ? '700' : '500' }}>Appts</span>
+              </button>
+              <button 
+                onClick={() => navigateToView('profile')} 
+                style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '0.25rem', color: view === 'profile' ? 'var(--accent-teal)' : 'var(--text-muted)', border: 'none', background: 'transparent' }}
+              >
+                <User size={18} />
+                <span style={{ fontSize: '0.65rem', fontWeight: view === 'profile' ? '700' : '500' }}>Profile</span>
+              </button>
             </div>
           )}
         </main>
