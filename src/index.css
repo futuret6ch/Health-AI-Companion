@@ -847,3 +847,9 @@ input:focus, textarea:focus, select:focus {
     border-radius: 16px !important;
   }
 }
+
+/* Quick action row custom scrollbar hiding */
+.quick-actions-row::-webkit-scrollbar {
+  display: none;
+}
+

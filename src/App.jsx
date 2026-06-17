@@ -134,6 +134,9 @@ export default function App() {
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [showVoiceHud, setShowVoiceHud] = useState(false);
   const [isDraggingReport, setIsDraggingReport] = useState(false);
+  const [chatSidebarCollapsed, setChatSidebarCollapsed] = useState(() => {
+    return localStorage.getItem('health_ai_chat_sidebar_collapsed') === 'true';
+  });
 
   // SaaS state helpers
   const toggleSaveMedicine = (medName) => {
@@ -1346,14 +1349,7 @@ export default function App() {
             </div>
           )}
 
-          {/* Floating Demo Mode Banner */}
-          {isAuthenticated && isDemoMode && !isOfflineMode && (
-            <div className="demo-mode-banner animate-fade-in" style={{ margin: '1.5rem 2rem 0 2rem' }}>
-              <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#22c55e', marginRight: '0.25rem' }}></span>
-              <span><strong>Demo Mode Sandbox</strong> — Pre-populated data loaded. Real-time diagnostic simulations active. No sensitive data stored.</span>
-              <span className="demo-badge-inline" style={{ marginLeft: 'auto' }}>Active Demo</span>
-            </div>
-          )}
+
 
           {isOfflineMode ? (
             <div style={{
@@ -2575,7 +2571,40 @@ export default function App() {
             <div style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
               
               {/* Chats List Sidebar (Collapsible/Toggleable) */}
-              <div className="glass-panel" style={{ width: '280px', display: 'flex', flexDirection: 'column', borderRight: '1px solid var(--border-color)', backgroundColor: '#ffffff' }}>
+              <div 
+                className="glass-panel" 
+                style={{ 
+                  width: chatSidebarCollapsed ? '0px' : '280px', 
+                  display: chatSidebarCollapsed ? 'none' : 'flex', 
+                  flexDirection: 'column', 
+                  borderRight: chatSidebarCollapsed ? 'none' : '1px solid var(--border-color)', 
+                  backgroundColor: '#ffffff',
+                  transition: 'width 0.25s ease, display 0.25s ease'
+                }}
+              >
+                {/* Sidebar Header with Collapse Button */}
+                <div style={{ padding: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-color)' }}>
+                  <span style={{ fontSize: '0.85rem', fontWeight: '700', color: 'var(--text-primary)' }}>Consultations</span>
+                  <button 
+                    onClick={() => {
+                      setChatSidebarCollapsed(true);
+                      localStorage.setItem('health_ai_chat_sidebar_collapsed', 'true');
+                    }}
+                    style={{
+                      padding: '0.35rem',
+                      borderRadius: '6px',
+                      color: 'var(--text-muted)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      cursor: 'pointer'
+                    }}
+                    title="Collapse Sidebar"
+                  >
+                    <ChevronRight size={18} style={{ transform: 'rotate(180deg)' }} />
+                  </button>
+                </div>
+
                 <div style={{ padding: '1rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                   <button 
                     onClick={handleStartNewChat}
@@ -2645,9 +2674,35 @@ export default function App() {
                   <>
                     {/* Active Chat Header */}
                     <div style={{ padding: '1rem 2rem', backgroundColor: '#ffffff', borderBottom: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <div>
-                        <h4 style={{ fontSize: '0.95rem', fontWeight: '700' }}>{activeChat.title}</h4>
-                        <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Virtual Clinical Knowledge AI</p>
+                      <div style={{ display: 'flex', alignItems: 'center' }}>
+                        {chatSidebarCollapsed && (
+                          <button 
+                            onClick={() => {
+                              setChatSidebarCollapsed(false);
+                              localStorage.setItem('health_ai_chat_sidebar_collapsed', 'false');
+                            }}
+                            style={{
+                              marginRight: '0.75rem',
+                              padding: '0.4rem',
+                              borderRadius: '8px',
+                              border: '1px solid var(--border-color)',
+                              backgroundColor: 'var(--bg-secondary)',
+                              color: 'var(--text-secondary)',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              cursor: 'pointer',
+                              boxShadow: 'var(--shadow-sm)'
+                            }}
+                            title="Expand Sidebar"
+                          >
+                            <Menu size={18} />
+                          </button>
+                        )}
+                        <div>
+                          <h4 style={{ fontSize: '0.95rem', fontWeight: '700' }}>{activeChat.title}</h4>
+                          <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Virtual Clinical Knowledge AI</p>
+                        </div>
                       </div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                         <button
@@ -2677,64 +2732,66 @@ export default function App() {
                     </div>
 
                     {/* Messages Scroll Area */}
-                    <div style={{ flex: 1, overflowY: 'auto', padding: '2rem', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-                      {activeChat.messages.length === 0 ? (
-                        <div style={{ display: 'flex', flexDirection: 'column', itemsAlign: 'center', justifyContent: 'center', flex: 1, gap: '1.5rem', textAlign: 'center', maxWidth: '600px', margin: '0 auto' }}>
-                          <div style={{ width: '64px', height: '64px', borderRadius: '16px', backgroundColor: 'var(--accent-teal-glow)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto' }}>
-                            <Stethoscope size={32} color="var(--accent-teal)" />
+                    <div style={{ flex: 1, overflowY: 'auto', padding: '2rem 1.5rem', display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+                      <div style={{ maxWidth: '1000px', width: '100%', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '2rem', flex: 1 }}>
+                        {activeChat.messages.length === 0 ? (
+                          <div style={{ display: 'flex', flexDirection: 'column', itemsAlign: 'center', justifyContent: 'center', flex: 1, gap: '1.5rem', textAlign: 'center', maxWidth: '600px', margin: '0 auto' }}>
+                            <div style={{ width: '64px', height: '64px', borderRadius: '16px', backgroundColor: 'var(--accent-teal-glow)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto' }}>
+                              <Stethoscope size={32} color="var(--accent-teal)" />
+                            </div>
+                            <div>
+                              <h3 style={{ fontSize: '1.4rem' }}>Ask your Healthcare Question</h3>
+                              <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginTop: '0.5rem' }}>
+                                Type your symptoms or questions. Remember, I provide general educational resources only. Do not ask for drug prescriptions or critical emergencies.
+                              </p>
+                            </div>
+                            
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '0.75rem', marginTop: '1rem' }}>
+                              {CHAT_SUGGESTIONS.map((sug, idx) => (
+                                <button 
+                                  key={idx}
+                                  onClick={() => handleSendChatMessage(sug)}
+                                  style={{
+                                    padding: '0.85rem', borderRadius: '8px', border: '1px solid var(--border-color)',
+                                    backgroundColor: '#ffffff', color: 'var(--text-secondary)', fontSize: '0.8rem',
+                                    textAlign: 'left', cursor: 'pointer', display: 'flex', alignItems: 'center',
+                                    gap: '0.5rem', transition: 'all 0.15s'
+                                  }}
+                                >
+                                  <ChevronRight size={14} color="var(--accent-teal)" />
+                                  {sug}
+                                </button>
+                              ))}
+                            </div>
                           </div>
-                          <div>
-                            <h3 style={{ fontSize: '1.4rem' }}>Ask your Healthcare Question</h3>
-                            <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginTop: '0.5rem' }}>
-                              Type your symptoms or questions. Remember, I provide general educational resources only. Do not ask for drug prescriptions or critical emergencies.
-                            </p>
-                          </div>
-                          
-                          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '0.75rem', marginTop: '1rem' }}>
-                            {CHAT_SUGGESTIONS.map((sug, idx) => (
-                              <button 
-                                key={idx}
-                                onClick={() => handleSendChatMessage(sug)}
-                                style={{
-                                  padding: '0.85rem', borderRadius: '8px', border: '1px solid var(--border-color)',
-                                  backgroundColor: '#ffffff', color: 'var(--text-secondary)', fontSize: '0.8rem',
-                                  textAlign: 'left', cursor: 'pointer', display: 'flex', alignItems: 'center',
-                                  gap: '0.5rem', transition: 'all 0.15s'
+                        ) : (
+                          activeChat.messages.map((m, idx) => {
+                            const isAi = m.sender === 'ai';
+                            return (
+                              <div 
+                                key={idx} 
+                                className="animate-chat-msg"
+                                style={{ 
+                                  display: 'flex', 
+                                  justifyContent: isAi ? 'flex-start' : 'flex-end', 
+                                  gap: '1rem',
+                                  maxWidth: '100%',
+                                  width: '100%',
+                                  alignSelf: isAi ? 'flex-start' : 'flex-end'
                                 }}
                               >
-                                <ChevronRight size={14} color="var(--accent-teal)" />
-                                {sug}
-                              </button>
-                            ))}
-                          </div>
-                        </div>
-                      ) : (
-                        activeChat.messages.map((m, idx) => {
-                          const isAi = m.sender === 'ai';
-                          return (
-                            <div 
-                              key={idx} 
-                              className="animate-chat-msg"
-                              style={{ 
-                                display: 'flex', 
-                                justifyContent: isAi ? 'flex-start' : 'flex-end', 
-                                gap: '1rem',
-                                maxWidth: '800px',
-                                alignSelf: isAi ? 'flex-start' : 'flex-end'
-                              }}
-                            >
-                              {isAi && (
-                                <div style={{ width: '32px', height: '32px', borderRadius: '50%', backgroundColor: 'var(--accent-teal)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                                  <HeartPulse size={16} color="#ffffff" />
-                                </div>
-                              )}
-                              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
-                                 {isAi && m.metadata && m.metadata.type === 'medicine' && m.metadata.medicineCard ? (
-                                  <div className="medicine-info-card" style={{
-                                    backgroundColor: '#ffffff', borderRadius: '12px', border: '1.5px solid var(--accent-teal)',
-                                    padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '1rem',
-                                    boxShadow: 'var(--shadow-md)', maxWidth: '100%', width: '480px', animation: 'scale-up 0.2s ease'
-                                  }}>
+                                {isAi && (
+                                  <div style={{ width: '32px', height: '32px', borderRadius: '50%', backgroundColor: 'var(--accent-teal)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                                    <HeartPulse size={16} color="#ffffff" />
+                                  </div>
+                                )}
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', width: '100%', maxWidth: '85%', alignItems: isAi ? 'flex-start' : 'flex-end' }}>
+                                   {isAi && m.metadata && m.metadata.type === 'medicine' && m.metadata.medicineCard ? (
+                                    <div className="medicine-info-card" style={{
+                                      backgroundColor: '#ffffff', borderRadius: '12px', border: '1.5px solid var(--accent-teal)',
+                                      padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '1rem',
+                                      boxShadow: 'var(--shadow-md)', maxWidth: '100%', width: '720px', animation: 'scale-up 0.2s ease'
+                                    }}>
                                     {/* Header */}
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.75rem' }}>
                                       <div style={{ width: '40px', height: '40px', borderRadius: '10px', backgroundColor: 'var(--accent-teal-glow)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
@@ -2838,7 +2895,7 @@ export default function App() {
                                   <div className="prescription-explainer-card" style={{
                                     backgroundColor: '#ffffff', borderRadius: '12px', border: '1.5px solid var(--accent-blue)',
                                     padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '1rem',
-                                    boxShadow: 'var(--shadow-md)', maxWidth: '100%', width: '500px', animation: 'scale-up 0.2s ease'
+                                    boxShadow: 'var(--shadow-md)', maxWidth: '100%', width: '720px', animation: 'scale-up 0.2s ease'
                                   }}>
                                     {/* Header */}
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.75rem' }}>
@@ -2996,15 +3053,15 @@ export default function App() {
                                     )}
 
                                     <div style={{
-                                      padding: '1rem 1.25rem',
-                                      paddingBottom: '1.6rem',
+                                      padding: '1.25rem 1.5rem',
+                                      paddingBottom: '1.8rem',
                                       borderRadius: isAi ? '18px 18px 18px 4px' : '18px 18px 4px 18px',
                                       backgroundColor: isAi ? '#ffffff' : 'var(--accent-blue)',
                                       color: isAi ? 'var(--text-primary)' : '#ffffff',
                                       border: isAi ? '1px solid var(--border-color)' : 'none',
                                       boxShadow: 'var(--shadow-sm)',
-                                      fontSize: '0.9rem',
-                                      lineHeight: '1.5',
+                                      fontSize: '0.95rem',
+                                      lineHeight: '1.6',
                                       whiteSpace: 'pre-line',
                                       position: 'relative',
                                       maxWidth: '100%'
@@ -3102,6 +3159,7 @@ export default function App() {
                           )}
                         </div>
                       )}
+                      </div>
                       <div ref={chatEndRef} />
                     </div>
 
@@ -3196,434 +3254,370 @@ export default function App() {
                         </div>
                       )}
 
-                      {/* Medicine Lookup Quick Actions & Search Box */}
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginBottom: '0.75rem' }}>
-                        {/* Quick Action Pills Row */}
-                        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', alignItems: 'center' }}>
-                          <button
-                            type="button"
-                            onClick={() => setShowAttachmentDropdown(!showAttachmentDropdown)}
-                            style={{
-                              padding: '0.4rem 0.8rem', borderRadius: '20px', border: '1.5px solid var(--border-color)',
-                              backgroundColor: showAttachmentDropdown ? 'var(--accent-teal-glow)' : 'transparent',
-                              color: 'var(--text-secondary)', fontSize: '0.78rem', fontWeight: '600',
-                              display: 'flex', alignItems: 'center', gap: '0.35rem', cursor: 'pointer',
-                              transition: 'all 0.15s ease'
-                            }}
-                          >
-                            <span>📎 Simulated Attachment</span>
-                          </button>
+                      {/* Combined Quick Actions Row */}
+                      <div 
+                        className="quick-actions-row" 
+                        style={{ 
+                          display: 'flex', 
+                          gap: '0.5rem', 
+                          overflowX: 'auto', 
+                          whiteSpace: 'nowrap', 
+                          paddingBottom: '0.5rem', 
+                          marginBottom: '0.75rem',
+                          alignItems: 'center',
+                          msOverflowStyle: 'none',
+                          scrollbarWidth: 'none'
+                        }}
+                      >
+                        {/* 1. Upload */}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setShowAttachmentDropdown(!showAttachmentDropdown);
+                            setShowMedSearchPanel(false);
+                          }}
+                          style={{
+                            padding: '0.35rem 0.75rem', borderRadius: '15px', border: '1.5px solid var(--border-color)',
+                            backgroundColor: showAttachmentDropdown ? 'var(--accent-teal-glow)' : '#ffffff',
+                            color: showAttachmentDropdown ? 'var(--accent-teal)' : 'var(--text-secondary)', 
+                            fontSize: '0.75rem', fontWeight: '600',
+                            display: 'inline-flex', alignItems: 'center', gap: '0.25rem', cursor: 'pointer',
+                            flexShrink: 0
+                          }}
+                        >
+                          <Plus size={12} />
+                          Upload
+                        </button>
 
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setShowMedSearchPanel(!showMedSearchPanel);
-                            }}
-                            style={{
-                              padding: '0.4rem 0.8rem', borderRadius: '20px', border: '1.5px solid var(--border-color)',
-                              backgroundColor: showMedSearchPanel ? 'var(--accent-teal-glow)' : 'transparent',
-                              color: 'var(--text-secondary)', fontSize: '0.78rem', fontWeight: '600',
-                              display: 'flex', alignItems: 'center', gap: '0.35rem', cursor: 'pointer',
-                              transition: 'all 0.15s ease'
-                            }}
-                          >
-                            <span>🔍 Search Medicine</span>
-                          </button>
+                        {/* 2. Search Medicine */}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setShowMedSearchPanel(!showMedSearchPanel);
+                            setShowAttachmentDropdown(false);
+                          }}
+                          style={{
+                            padding: '0.35rem 0.75rem', borderRadius: '15px', border: '1.5px solid var(--border-color)',
+                            backgroundColor: showMedSearchPanel ? 'var(--accent-teal-glow)' : '#ffffff',
+                            color: showMedSearchPanel ? 'var(--accent-teal)' : 'var(--text-secondary)', 
+                            fontSize: '0.75rem', fontWeight: '600',
+                            display: 'inline-flex', alignItems: 'center', gap: '0.25rem', cursor: 'pointer',
+                            flexShrink: 0
+                          }}
+                        >
+                          <Search size={12} />
+                          Search Medicine
+                        </button>
 
-                          <button
-                            type="button"
-                            onClick={() => handleSendChatMessage("Explain my prescription")}
-                            style={{
-                              padding: '0.4rem 0.8rem', borderRadius: '20px', border: '1px solid var(--border-color)',
-                              backgroundColor: '#ffffff', color: 'var(--text-secondary)', fontSize: '0.78rem', fontWeight: '500',
-                              display: 'flex', alignItems: 'center', gap: '0.35rem', cursor: 'pointer',
-                              transition: 'all 0.15s ease'
-                            }}
-                          >
-                            <span>📄 Explain Prescription</span>
-                          </button>
+                        {/* 3. Explain Prescription */}
+                        <button
+                          type="button"
+                          onClick={() => handleSendChatMessage("Explain my prescription")}
+                          style={{
+                            padding: '0.35rem 0.75rem', borderRadius: '15px', border: '1px solid var(--border-color)',
+                            backgroundColor: '#ffffff', color: 'var(--text-secondary)', 
+                            fontSize: '0.75rem', fontWeight: '600',
+                            display: 'inline-flex', alignItems: 'center', gap: '0.25rem', cursor: 'pointer',
+                            flexShrink: 0
+                          }}
+                        >
+                          <FileText size={12} />
+                          Explain Prescription
+                        </button>
 
-                          <button
-                            type="button"
-                            onClick={() => handleSendChatMessage("Check Safety Information for current medications")}
-                            style={{
-                              padding: '0.4rem 0.8rem', borderRadius: '20px', border: '1px solid var(--border-color)',
-                              backgroundColor: '#ffffff', color: 'var(--text-secondary)', fontSize: '0.78rem', fontWeight: '500',
-                              display: 'flex', alignItems: 'center', gap: '0.35rem', cursor: 'pointer',
-                              transition: 'all 0.15s ease'
-                            }}
-                          >
-                            <span>⚠️ Check Safety</span>
-                          </button>
-                        </div>
+                        {/* 4. Check Safety */}
+                        <button
+                          type="button"
+                          onClick={() => handleSendChatMessage("Check Safety Information for current medications")}
+                          style={{
+                            padding: '0.35rem 0.75rem', borderRadius: '15px', border: '1px solid var(--border-color)',
+                            backgroundColor: '#ffffff', color: 'var(--text-secondary)', 
+                            fontSize: '0.75rem', fontWeight: '600',
+                            display: 'inline-flex', alignItems: 'center', gap: '0.25rem', cursor: 'pointer',
+                            flexShrink: 0
+                          }}
+                        >
+                          <ShieldAlert size={12} />
+                          Check Safety
+                        </button>
 
-                        {/* Simulated Attachment Dropdown Options */}
-                        {showAttachmentDropdown && (
-                          <div className="glass-panel" style={{
-                            padding: '1rem', borderRadius: '8px', border: '1px solid var(--border-color)',
-                            backgroundColor: 'var(--bg-secondary)', display: 'flex', flexDirection: 'column', gap: '0.5rem',
-                            animation: 'slide-down 0.2s ease'
-                          }}>
-                            <p style={{ fontSize: '0.75rem', fontWeight: '600', color: 'var(--text-secondary)', margin: 0 }}>Select simulated upload file:</p>
-                            <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  handleSendChatMessage("Identify paracetamol pack packaging", "image", "paracetamol_pack.jpg");
-                                  setShowAttachmentDropdown(false);
-                                }}
-                                style={{ padding: '0.35rem 0.75rem', borderRadius: '6px', border: '1px solid var(--border-color)', backgroundColor: '#ffffff', fontSize: '0.75rem', cursor: 'pointer' }}
-                              >
-                                📸 paracetamol_pack.jpg (Identified)
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  handleSendChatMessage("Scan packaging text", "image", "blurry_label.png");
-                                  setShowAttachmentDropdown(false);
-                                }}
-                                style={{ padding: '0.35rem 0.75rem', borderRadius: '6px', border: '1px solid var(--border-color)', backgroundColor: '#ffffff', fontSize: '0.75rem', cursor: 'pointer' }}
-                              >
-                                📸 blurry_label.png (Low Confidence)
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  handleSendChatMessage("Analyze Rx document", "prescription", "allergy_conflict_prescription.pdf");
-                                  setShowAttachmentDropdown(false);
-                                }}
-                                style={{ padding: '0.35rem 0.75rem', borderRadius: '6px', border: '1px solid var(--border-color)', backgroundColor: '#ffffff', fontSize: '0.75rem', cursor: 'pointer' }}
-                              >
-                                📄 allergy_conflict_prescription.pdf (Penicillin Warning)
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  handleSendChatMessage("Analyze Rx document", "prescription", "asthma_regimen_rx.pdf");
-                                  setShowAttachmentDropdown(false);
-                                }}
-                                style={{ padding: '0.35rem 0.75rem', borderRadius: '6px', border: '1px solid var(--border-color)', backgroundColor: '#ffffff', fontSize: '0.75rem', cursor: 'pointer' }}
-                              >
-                                📄 asthma_regimen_rx.pdf (PRN and QD Abbreviations)
-                              </button>
-                            </div>
+                        {/* 5. Symptoms */}
+                        <button
+                          type="button"
+                          onClick={() => navigateToView('symptoms')}
+                          style={{
+                            padding: '0.35rem 0.75rem', borderRadius: '15px', border: '1px solid var(--border-color)',
+                            backgroundColor: '#ffffff', color: 'var(--text-secondary)', 
+                            fontSize: '0.75rem', fontWeight: '600',
+                            display: 'inline-flex', alignItems: 'center', gap: '0.25rem', cursor: 'pointer',
+                            flexShrink: 0
+                          }}
+                        >
+                          <Stethoscope size={12} />
+                          Symptoms
+                        </button>
+
+                        {/* 6. Medicine */}
+                        <button
+                          type="button"
+                          onClick={() => { navigateToView('chat'); setShowMedSearchPanel(true); }}
+                          style={{
+                            padding: '0.35rem 0.75rem', borderRadius: '15px', border: '1px solid var(--border-color)',
+                            backgroundColor: '#ffffff', color: 'var(--text-secondary)', 
+                            fontSize: '0.75rem', fontWeight: '600',
+                            display: 'inline-flex', alignItems: 'center', gap: '0.25rem', cursor: 'pointer',
+                            flexShrink: 0
+                          }}
+                        >
+                          <Pill size={12} />
+                          Medicine
+                        </button>
+
+                        {/* 7. Report */}
+                        <button
+                          type="button"
+                          onClick={() => navigateToView('reports')}
+                          style={{
+                            padding: '0.35rem 0.75rem', borderRadius: '15px', border: '1px solid var(--border-color)',
+                            backgroundColor: '#ffffff', color: 'var(--text-secondary)', 
+                            fontSize: '0.75rem', fontWeight: '600',
+                            display: 'inline-flex', alignItems: 'center', gap: '0.25rem', cursor: 'pointer',
+                            flexShrink: 0
+                          }}
+                        >
+                          <ClipboardList size={12} />
+                          Report
+                        </button>
+
+                        {/* 8. Health Tips */}
+                        <button
+                          type="button"
+                          onClick={() => handleSendChatMessage("Give me general health advice based on my parameters")}
+                          style={{
+                            padding: '0.35rem 0.75rem', borderRadius: '15px', border: '1px solid var(--border-color)',
+                            backgroundColor: '#ffffff', color: 'var(--text-secondary)', 
+                            fontSize: '0.75rem', fontWeight: '600',
+                            display: 'inline-flex', alignItems: 'center', gap: '0.25rem', cursor: 'pointer',
+                            flexShrink: 0
+                          }}
+                        >
+                          <Sparkles size={12} />
+                          Health Tips
+                        </button>
+                      </div>
+
+                      {/* Simulated Attachment Dropdown Options */}
+                      {showAttachmentDropdown && (
+                        <div className="glass-panel" style={{
+                          padding: '1rem', borderRadius: '8px', border: '1px solid var(--border-color)',
+                          backgroundColor: 'var(--bg-secondary)', display: 'flex', flexDirection: 'column', gap: '0.5rem',
+                          animation: 'slide-down 0.2s ease', marginBottom: '0.75rem'
+                        }}>
+                          <p style={{ fontSize: '0.75rem', fontWeight: '600', color: 'var(--text-secondary)', margin: 0 }}>Select simulated upload file:</p>
+                          <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                handleSendChatMessage("Identify paracetamol pack packaging", "image", "paracetamol_pack.jpg");
+                                setShowAttachmentDropdown(false);
+                              }}
+                              style={{ padding: '0.35rem 0.75rem', borderRadius: '6px', border: '1px solid var(--border-color)', backgroundColor: '#ffffff', fontSize: '0.75rem', cursor: 'pointer' }}
+                            >
+                              📸 paracetamol_pack.jpg (Identified)
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                handleSendChatMessage("Scan packaging text", "image", "blurry_label.png");
+                                setShowAttachmentDropdown(false);
+                              }}
+                              style={{ padding: '0.35rem 0.75rem', borderRadius: '6px', border: '1px solid var(--border-color)', backgroundColor: '#ffffff', fontSize: '0.75rem', cursor: 'pointer' }}
+                            >
+                              📸 blurry_label.png (Low Confidence)
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                handleSendChatMessage("Analyze Rx document", "prescription", "allergy_conflict_prescription.pdf");
+                                setShowAttachmentDropdown(false);
+                              }}
+                              style={{ padding: '0.35rem 0.75rem', borderRadius: '6px', border: '1px solid var(--border-color)', backgroundColor: '#ffffff', fontSize: '0.75rem', cursor: 'pointer' }}
+                            >
+                              📄 allergy_conflict_prescription.pdf (Penicillin Warning)
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                handleSendChatMessage("Analyze Rx document", "prescription", "asthma_regimen_rx.pdf");
+                                setShowAttachmentDropdown(false);
+                              }}
+                              style={{ padding: '0.35rem 0.75rem', borderRadius: '6px', border: '1px solid var(--border-color)', backgroundColor: '#ffffff', fontSize: '0.75rem', cursor: 'pointer' }}
+                            >
+                              📄 asthma_regimen_rx.pdf (PRN and QD Abbreviations)
+                            </button>
                           </div>
-                        )}
+                        </div>
+                      )}
 
-                        {/* Search Medicine Panel */}
-                        {showMedSearchPanel && (
-                          <div className="glass-panel" style={{
-                            padding: '1rem', borderRadius: '8px', border: '1px solid var(--border-color)',
-                            backgroundColor: 'var(--bg-secondary)', display: 'flex', flexDirection: 'column', gap: '0.75rem',
-                            animation: 'slide-down 0.2s ease'
-                          }}>
-                            <div style={{ display: 'flex', gap: '0.5rem' }}>
-                              <input
-                                type="text"
-                                placeholder="Search medicine..."
-                                value={medSearchInput}
-                                onChange={(e) => setMedSearchInput(e.target.value)}
-                                style={{ flex: 1, height: '36px', padding: '0 0.75rem', fontSize: '0.85rem', border: '1px solid var(--border-color)', borderRadius: '6px' }}
-                                onKeyDown={(e) => {
-                                  if (e.key === 'Enter') {
-                                    e.preventDefault();
-                                    if (medSearchInput.trim()) {
-                                      handleSendChatMessage(medSearchInput);
-                                      setMedSearchInput('');
-                                      setShowMedSearchPanel(false);
-                                    }
-                                  }
-                                }}
-                              />
-                              <button
-                                type="button"
-                                onClick={() => {
+                      {/* Search Medicine Panel */}
+                      {showMedSearchPanel && (
+                        <div className="glass-panel" style={{
+                          padding: '1rem', borderRadius: '8px', border: '1px solid var(--border-color)',
+                          backgroundColor: 'var(--bg-secondary)', display: 'flex', flexDirection: 'column', gap: '0.75rem',
+                          animation: 'slide-down 0.2s ease', marginBottom: '0.75rem'
+                        }}>
+                          <div style={{ display: 'flex', gap: '0.5rem' }}>
+                            <input
+                              type="text"
+                              placeholder="Search medicine..."
+                              value={medSearchInput}
+                              onChange={(e) => setMedSearchInput(e.target.value)}
+                              style={{ flex: 1, height: '36px', padding: '0 0.75rem', fontSize: '0.85rem', border: '1px solid var(--border-color)', borderRadius: '6px' }}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') {
+                                  e.preventDefault();
                                   if (medSearchInput.trim()) {
                                     handleSendChatMessage(medSearchInput);
                                     setMedSearchInput('');
                                     setShowMedSearchPanel(false);
                                   }
-                                }}
-                                style={{
-                                  padding: '0 1rem', height: '36px', borderRadius: '6px',
-                                  backgroundColor: 'var(--accent-teal)', color: '#ffffff',
-                                  fontSize: '0.8rem', fontWeight: '600', cursor: 'pointer'
-                                }}
-                              >
-                                Search
-                              </button>
-                            </div>
-
-                            {/* Suggestion Chips */}
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
-                              <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Suggestions:</span>
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  handleSendChatMessage("What is Paracetamol?");
-                                  setShowMedSearchPanel(false);
-                                }}
-                                style={{ padding: '0.25rem 0.6rem', borderRadius: '15px', border: '1px solid var(--border-color)', backgroundColor: '#ffffff', fontSize: '0.7rem', color: 'var(--text-secondary)', cursor: 'pointer' }}
-                              >
-                                Fever medicine
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  handleSendChatMessage("What is Ibuprofen?");
-                                  setShowMedSearchPanel(false);
-                                }}
-                                style={{ padding: '0.25rem 0.6rem', borderRadius: '15px', border: '1px solid var(--border-color)', backgroundColor: '#ffffff', fontSize: '0.7rem', color: 'var(--text-secondary)', cursor: 'pointer' }}
-                              >
-                                Pain relief
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  handleSendChatMessage("What is Vitamin D3?");
-                                  setShowMedSearchPanel(false);
-                                }}
-                                style={{ padding: '0.25rem 0.6rem', borderRadius: '15px', border: '1px solid var(--border-color)', backgroundColor: '#ffffff', fontSize: '0.7rem', color: 'var(--text-secondary)', cursor: 'pointer' }}
-                              >
-                                Vitamins
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  handleSendChatMessage("What is Cetirizine?");
-                                  setShowMedSearchPanel(false);
-                                }}
-                                style={{ padding: '0.25rem 0.6rem', borderRadius: '15px', border: '1px solid var(--border-color)', backgroundColor: '#ffffff', fontSize: '0.7rem', color: 'var(--text-secondary)', cursor: 'pointer' }}
-                              >
-                                Allergy medicine
-                              </button>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Smart Suggestion Chips */}
-                      <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.75rem', flexWrap: 'wrap' }}>
-                        <button
-                          type="button"
-                          onClick={() => navigateToView('reports')}
-                          style={{
-                            padding: '0.45rem 0.9rem',
-                            borderRadius: '20px',
-                            border: '1px solid var(--border-color)',
-                            backgroundColor: '#ffffff',
-                            color: 'var(--text-secondary)',
-                            fontSize: '0.78rem',
-                            fontWeight: '600',
-                            cursor: 'pointer',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '0.25rem',
-                            transition: 'all 0.15s ease'
-                          }}
-                        >
-                          📄 Analyze my report
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => { navigateToView('chat'); setShowMedSearchPanel(true); }}
-                          style={{
-                            padding: '0.45rem 0.9rem',
-                            borderRadius: '20px',
-                            border: '1px solid var(--border-color)',
-                            backgroundColor: '#ffffff',
-                            color: 'var(--text-secondary)',
-                            fontSize: '0.78rem',
-                            fontWeight: '600',
-                            cursor: 'pointer',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '0.25rem',
-                            transition: 'all 0.15s ease'
-                          }}
-                        >
-                          💊 Explain medicine
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => navigateToView('symptoms')}
-                          style={{
-                            padding: '0.45rem 0.9rem',
-                            borderRadius: '20px',
-                            border: '1px solid var(--border-color)',
-                            backgroundColor: '#ffffff',
-                            color: 'var(--text-secondary)',
-                            fontSize: '0.78rem',
-                            fontWeight: '600',
-                            cursor: 'pointer',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '0.25rem',
-                            transition: 'all 0.15s ease'
-                          }}
-                        >
-                          🔍 Check symptoms
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => handleSendChatMessage("Give me general health advice based on my parameters")}
-                          style={{
-                            padding: '0.45rem 0.9rem',
-                            borderRadius: '20px',
-                            border: '1px solid var(--border-color)',
-                            backgroundColor: '#ffffff',
-                            color: 'var(--text-secondary)',
-                            fontSize: '0.78rem',
-                            fontWeight: '600',
-                            cursor: 'pointer',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '0.25rem',
-                            transition: 'all 0.15s ease'
-                          }}
-                        >
-                          💡 Health advice
-                        </button>
-                      </div>
-
-                      {/* Voice Settings HUD Panel */}
-                      {showVoiceHud && (
-                        <div className="glass-panel" style={{
-                          padding: '1rem', borderRadius: '12px', border: '1px solid var(--border-color)',
-                          backgroundColor: 'var(--bg-secondary)', display: 'flex', flexDirection: 'column', gap: '1rem',
-                          animation: 'slide-down 0.25s ease', marginBottom: '0.75rem'
-                        }}>
-                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <h4 style={{ fontSize: '0.85rem', fontWeight: '700', color: 'var(--text-primary)' }}>
-                              Real-Time Voice Settings
-                            </h4>
-                            <button 
+                                }
+                              }}
+                            />
+                            <button
                               type="button"
-                              onClick={() => setShowVoiceHud(false)}
-                              style={{ fontSize: '1rem', color: 'var(--text-muted)', cursor: 'pointer' }}
+                              onClick={() => {
+                                if (medSearchInput.trim()) {
+                                  handleSendChatMessage(medSearchInput);
+                                  setMedSearchInput('');
+                                  setShowMedSearchPanel(false);
+                                }
+                              }}
+                              style={{
+                                padding: '0 1rem', height: '36px', borderRadius: '6px',
+                                backgroundColor: 'var(--accent-teal)', color: '#ffffff',
+                                fontSize: '0.8rem', fontWeight: '600', cursor: 'pointer'
+                              }}
                             >
-                              &times;
+                              Search
                             </button>
                           </div>
 
-                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', flexWrap: 'wrap' }}>
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
-                              <label style={{ fontSize: '0.75rem', fontWeight: '600', color: 'var(--text-secondary)' }}>
-                                Voice Language
-                              </label>
-                              <select
-                                value={privacySettings.voiceLanguage}
-                                onChange={(e) => handlePrivacyToggle('voiceLanguage', e.target.value)}
-                                style={{ height: '36px', padding: '0 0.5rem', fontSize: '0.8rem' }}
-                              >
-                                <option value="en">English (US)</option>
-                                <option value="hi">Hindi (हिंदी)</option>
-                                <option value="hinglish">Hinglish</option>
-                              </select>
-                            </div>
-
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
-                              <label style={{ fontSize: '0.75rem', fontWeight: '600', color: 'var(--text-secondary)', display: 'flex', justifyContent: 'space-between' }}>
-                                <span>Speaking Speed</span>
-                                <span>{privacySettings.speakingSpeed}x</span>
-                              </label>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                <input
-                                  type="range"
-                                  min="0.8"
-                                  max="2.0"
-                                  step="0.1"
-                                  value={privacySettings.speakingSpeed}
-                                  onChange={(e) => handlePrivacyToggle('speakingSpeed', parseFloat(e.target.value))}
-                                  style={{ flex: 1, height: '6px', cursor: 'pointer' }}
-                                />
-                              </div>
-                            </div>
-                          </div>
-
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                            <input
-                              type="checkbox"
-                              id="hudVoiceEnabled"
-                              checked={privacySettings.voiceEnabled}
-                              onChange={(e) => handlePrivacyToggle('voiceEnabled', e.target.checked)}
-                            />
-                            <label htmlFor="hudVoiceEnabled" style={{ fontSize: '0.75rem', fontWeight: '500', color: 'var(--text-secondary)', cursor: 'pointer' }}>
-                              Enable voice responses (TTS Readout)
-                            </label>
+                          {/* Suggestion Chips */}
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+                            <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Suggestions:</span>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                handleSendChatMessage("What is Paracetamol?");
+                                setShowMedSearchPanel(false);
+                              }}
+                              style={{ padding: '0.25rem 0.6rem', borderRadius: '15px', border: '1px solid var(--border-color)', backgroundColor: '#ffffff', fontSize: '0.7rem', color: 'var(--text-secondary)', cursor: 'pointer' }}
+                            >
+                              Fever medicine
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                handleSendChatMessage("What is Ibuprofen?");
+                                setShowMedSearchPanel(false);
+                              }}
+                              style={{ padding: '0.25rem 0.6rem', borderRadius: '15px', border: '1px solid var(--border-color)', backgroundColor: '#ffffff', fontSize: '0.7rem', color: 'var(--text-secondary)', cursor: 'pointer' }}
+                            >
+                              Pain relief
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                handleSendChatMessage("What is Vitamin D3?");
+                                setShowMedSearchPanel(false);
+                              }}
+                              style={{ padding: '0.25rem 0.6rem', borderRadius: '15px', border: '1px solid var(--border-color)', backgroundColor: '#ffffff', fontSize: '0.7rem', color: 'var(--text-secondary)', cursor: 'pointer' }}
+                            >
+                              Vitamins
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                handleSendChatMessage("What is Cetirizine?");
+                                setShowMedSearchPanel(false);
+                              }}
+                              style={{ padding: '0.25rem 0.6rem', borderRadius: '15px', border: '1px solid var(--border-color)', backgroundColor: '#ffffff', fontSize: '0.7rem', color: 'var(--text-secondary)', cursor: 'pointer' }}
+                            >
+                              Allergy medicine
+                            </button>
                           </div>
                         </div>
                       )}
 
+                      {/* Message Input Area Form */}
                       <form 
                         onSubmit={(e) => { e.preventDefault(); handleSendChatMessage(); }}
-                        style={{ display: 'flex', gap: '0.75rem', position: 'relative' }}
+                        style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', position: 'relative' }}
                       >
-                        {/* Microphone Voice Button */}
-                        <button
-                          type="button"
-                          onClick={toggleListening}
-                          className={voiceState === 'listening' ? 'mic-glow-pulse' : ''}
-                          style={{
-                            width: '46px', height: '46px', borderRadius: '8px',
-                            display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            border: '1px solid var(--border-color)',
-                            backgroundColor: voiceState === 'listening' ? '#ffe4e6' : 'var(--bg-tertiary)',
-                            color: voiceState === 'listening' ? 'var(--accent-rose)' : 'var(--text-secondary)',
-                            transition: 'all 0.2s ease',
-                          }}
-                          title={voiceState === 'listening' ? 'Stop recording voice query' : 'Record voice query'}
-                          aria-label={voiceState === 'listening' ? 'Stop recording voice' : 'Record voice query'}
-                        >
-                          {voiceState === 'listening' ? <MicOff size={20} /> : <Mic size={20} />}
-                        </button>
+                        <div style={{ position: 'relative', flex: 1, display: 'flex', alignItems: 'center' }}>
+                          {/* Microphone Voice Button */}
+                          <button
+                            type="button"
+                            onClick={toggleListening}
+                            className={voiceState === 'listening' ? 'mic-glow-pulse' : ''}
+                            style={{
+                              position: 'absolute',
+                              left: '12px',
+                              width: '32px',
+                              height: '32px',
+                              borderRadius: '50%',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              backgroundColor: voiceState === 'listening' ? '#ffe4e6' : 'transparent',
+                              color: voiceState === 'listening' ? 'var(--accent-rose)' : 'var(--text-secondary)',
+                              transition: 'all 0.2s ease',
+                              border: 'none',
+                              cursor: 'pointer',
+                              zIndex: 2,
+                            }}
+                            title={voiceState === 'listening' ? 'Stop recording voice query' : 'Record voice query'}
+                            aria-label={voiceState === 'listening' ? 'Stop recording voice' : 'Record voice query'}
+                          >
+                            {voiceState === 'listening' ? <MicOff size={18} /> : <Mic size={18} />}
+                          </button>
+                          
+                          <input 
+                            type="text" 
+                            placeholder="Type symptom question or speak..."
+                            value={chatInput}
+                            onChange={(e) => setChatInput(e.target.value)}
+                            style={{ 
+                              width: '100%', 
+                              paddingLeft: '3rem', 
+                              paddingRight: '1.25rem',
+                              height: '52px', // Larger text box
+                              fontSize: '0.95rem',
+                              borderRadius: '26px', // Premium rounded input pill
+                              border: '1px solid var(--border-color)',
+                              backgroundColor: 'var(--bg-secondary)',
+                              boxShadow: 'var(--shadow-sm)',
+                            }}
+                            disabled={isAiTyping}
+                          />
+                        </div>
 
-                        <button
-                          type="button"
-                          onClick={() => setShowAttachmentDropdown(!showAttachmentDropdown)}
-                          style={{
-                            width: '46px', height: '46px', borderRadius: '8px',
-                            display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            border: '1px solid var(--border-color)',
-                            backgroundColor: showAttachmentDropdown ? 'var(--accent-teal-glow)' : 'var(--bg-tertiary)',
-                            color: 'var(--accent-teal)',
-                            transition: 'all 0.2s ease',
-                          }}
-                          title="Simulate Document Attachment"
-                        >
-                          <Plus size={20} />
-                        </button>
-
-                        <button
-                          type="button"
-                          onClick={() => setShowVoiceHud(!showVoiceHud)}
-                          style={{
-                            width: '46px', height: '46px', borderRadius: '8px',
-                            display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            border: '1px solid var(--border-color)',
-                            backgroundColor: showVoiceHud ? 'var(--accent-teal-glow)' : 'var(--bg-tertiary)',
-                            color: 'var(--accent-teal)',
-                            transition: 'all 0.2s ease',
-                          }}
-                          title="Toggle Voice Settings HUD"
-                        >
-                          <Settings size={20} />
-                        </button>
-
-                        <input 
-                          type="text" 
-                          placeholder="Type symptom question or click microphone to speak..."
-                          value={chatInput}
-                          onChange={(e) => setChatInput(e.target.value)}
-                          style={{ flex: 1, paddingRight: '4.5rem' }}
-                          disabled={isAiTyping}
-                        />
                         <button 
                           type="submit" 
                           style={{
-                            padding: '0 1.5rem', borderRadius: '8px', 
-                            backgroundColor: 'var(--accent-teal)', color: '#ffffff', 
-                            fontWeight: '600', cursor: 'pointer'
+                            height: '52px',
+                            padding: '0 1.75rem',
+                            borderRadius: '26px', 
+                            backgroundColor: 'var(--accent-teal)',
+                            color: '#ffffff', 
+                            fontWeight: '600',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: '0.5rem',
+                            cursor: 'pointer',
+                            boxShadow: '0 4px 10px var(--accent-teal-glow)'
                           }}
                           disabled={isAiTyping}
                         >
