@@ -92,10 +92,28 @@ def generate_chat_completion(message, history, profile, model_name=None, context
         "slurred speech", "numbness", "paralysis", "loss of consciousness", "anaphylaxis"
     ]
     
+    # Map friendly model names to actual installed tags in Ollama
+    resolved_model = model_name
+    try:
+        status = check_ollama_status()
+        if status["connected"]:
+            available = status["available_models"]
+            if resolved_model not in available:
+                if f"{resolved_model}:latest" in available:
+                    resolved_model = f"{resolved_model}:latest"
+                else:
+                    # Search prefix/substring match (e.g. deepseek-coder matches deepseek-coder-v2:latest)
+                    for m in available:
+                        if resolved_model in m:
+                            resolved_model = m
+                            break
+    except Exception as ex:
+        print(f"Error resolving Ollama model name: {ex}")
+
     # 1. Attempt to send request to local Ollama API
     try:
         payload = {
-            "model": model_name,
+            "model": resolved_model,
             "messages": [
                 {"role": "system", "content": system_prompt},
                 *history[-10:], # Send the last 10 messages for context
@@ -107,7 +125,7 @@ def generate_chat_completion(message, history, profile, model_name=None, context
             }
         }
         
-        response = requests.post(f"{OLLAMA_URL}/api/chat", json=payload, timeout=8)
+        response = requests.post(f"{OLLAMA_URL}/api/chat", json=payload, timeout=45)
         if response.status_code == 200:
             result = response.json()
             return {

@@ -364,33 +364,99 @@ export default function App() {
     setSpeakingMessageId(null);
   };
 
-  const toggleListening = () => {
+  const toggleListening = async () => {
     // Premium gate check
     if (profile.subscriptionPlan === 'free') {
       alert("🔒 Voice AI Assistant is a Premium Feature. Please upgrade your subscription plan in Profile Settings to use Voice Conversations.");
       return;
     }
 
-    if (!recognitionRef.current) {
-      alert("Speech recognition is not supported in this browser. Please use Chrome or Edge.");
-      return;
-    }
-
-    if (isListening) {
-      recognitionRef.current.stop();
-    } else {
-      stopSpeaking();
-      
-      if (privacySettings.voiceLanguage === 'hi' || privacySettings.voiceLanguage === 'hinglish') {
-        recognitionRef.current.lang = 'hi-IN';
-      } else {
-        recognitionRef.current.lang = 'en-US';
+    if (isOfflineMode) {
+      if (!recognitionRef.current) {
+        alert("Speech recognition is not supported in this browser. Please use Chrome or Edge.");
+        return;
       }
 
-      try {
-        recognitionRef.current.start();
-      } catch (err) {
-        console.error("Failed to start speech recognition:", err);
+      if (isListening) {
+        recognitionRef.current.stop();
+      } else {
+        stopSpeaking();
+        
+        if (privacySettings.voiceLanguage === 'hi' || privacySettings.voiceLanguage === 'hinglish') {
+          recognitionRef.current.lang = 'hi-IN';
+        } else {
+          recognitionRef.current.lang = 'en-US';
+        }
+
+        try {
+          recognitionRef.current.start();
+        } catch (err) {
+          console.error("Failed to start speech recognition:", err);
+        }
+      }
+    } else {
+      // Live Voice Recording (Whisper AI)
+      if (isListening) {
+        if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+          mediaRecorderRef.current.stop();
+        }
+        setIsListening(false);
+      } else {
+        stopSpeaking();
+        audioChunksRef.current = [];
+        try {
+          const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+          const mediaRecorder = new MediaRecorder(stream);
+          mediaRecorderRef.current = mediaRecorder;
+
+          mediaRecorder.ondataavailable = (event) => {
+            if (event.data && event.data.size > 0) {
+              audioChunksRef.current.push(event.data);
+            }
+          };
+
+          mediaRecorder.onstop = async () => {
+            // Stop tracks to release microphone
+            stream.getTracks().forEach(track => track.stop());
+
+            const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+            if (audioBlob.size === 0) return;
+
+            try {
+              setIsAiTyping(true);
+              const formData = new FormData();
+              formData.append('file', audioBlob, 'recording.webm');
+              if (privacySettings.voiceLanguage) {
+                formData.append('text_hint', privacySettings.voiceLanguage);
+              }
+
+              const res = await fetch('http://localhost:8000/api/voice', {
+                method: 'POST',
+                body: formData
+              });
+
+              if (res.ok) {
+                const data = await res.json();
+                if (data.text && data.text.trim()) {
+                  handleSendChatMessage(data.text);
+                }
+              } else {
+                console.error("Whisper AI STT returned non-200 response");
+              }
+            } catch (err) {
+              console.error("Failed to upload audio to Whisper STT:", err);
+            } finally {
+              setIsAiTyping(false);
+            }
+          };
+
+          mediaRecorder.start();
+          setIsListening(true);
+        } catch (err) {
+          console.error("Failed to access microphone or start MediaRecorder:", err);
+          alert("Could not access microphone. Please check permissions.");
+          setIsListening(false);
+        }
       }
     }
   };
@@ -757,7 +823,7 @@ export default function App() {
     const filename = reportFileName || 'uploaded_lab_record.txt';
 
     try {
-      const result = await analyzeMedicalReport(filename, reportText);
+      const result = await analyzeMedicalReport(filename, reportText, isOfflineMode, selectedModel);
       
       // Save to Reports list database
       db.addReport(filename, result.summary, result.explanations, result.doctorQuestions);
@@ -4586,6 +4652,57 @@ export default function App() {
               <div>
                 <h2 style={{ fontSize: '1.8rem', fontFamily: 'var(--font-display)', fontWeight: '700' }}>Settings & Privacy</h2>
                 <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Configure Voice AI speech properties, configure confidentiality parameters, or clear database items.</p>
+              </div>
+
+              {/* Local AI Backend Configuration Card */}
+              <div className="health-card" style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                <h3 style={{ fontSize: '1.1rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <Sparkles size={18} color="var(--accent-teal)" />
+                  Local AI Backend Config
+                </h3>
+                
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+                  {/* Backend Status indicator */}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div>
+                      <strong style={{ fontSize: '0.9rem', color: 'var(--text-primary)' }}>Local AI Server Status</strong>
+                      <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Connection state of local Python/Ollama backend.</p>
+                    </div>
+                    <div style={{
+                      display: 'flex', alignItems: 'center', gap: '0.35rem', fontSize: '0.8rem', fontWeight: '600',
+                      padding: '0.4rem 0.8rem', borderRadius: '20px', border: '1px solid var(--border-color)',
+                      backgroundColor: isOfflineMode ? 'rgba(239, 68, 68, 0.1)' : 'rgba(34, 197, 94, 0.1)',
+                      color: isOfflineMode ? 'var(--accent-rose)' : 'var(--accent-emerald)'
+                    }}>
+                      <span style={{
+                        width: '8px', height: '8px', borderRadius: '50%',
+                        backgroundColor: isOfflineMode ? 'var(--accent-rose)' : 'var(--accent-emerald)'
+                      }} />
+                      <span>{isOfflineMode ? 'Offline / Simulation Mode' : 'Connected to Python Backend'}</span>
+                    </div>
+                  </div>
+
+                  {/* Model Selection Dropdown */}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div>
+                      <strong style={{ fontSize: '0.9rem', color: 'var(--text-primary)' }}>Active LLM Model</strong>
+                      <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Choose the local Ollama LLM engine for health inquiries.</p>
+                    </div>
+                    <select 
+                      value={selectedModel} 
+                      onChange={(e) => {
+                        setSelectedModel(e.target.value);
+                        localStorage.setItem('health_ai_selected_model', e.target.value);
+                      }}
+                      style={{ width: '220px' }}
+                    >
+                      <option value="llama3.1">llama3.1 (Main Healthcare Chatbot)</option>
+                      <option value="qwen2.5">qwen2.5 (Multilingual Support)</option>
+                      <option value="mistral">mistral (Fast Responses)</option>
+                      <option value="deepseek-coder">deepseek-coder (Development Assistant)</option>
+                    </select>
+                  </div>
+                </div>
               </div>
 
               {/* Voice AI Assistant Settings Card */}
