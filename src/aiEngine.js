@@ -325,7 +325,7 @@ export function getChatResponse(query, chatHistory = [], profile = {}, isVoiceMo
           content: m.text
         }));
 
-        const response = await fetch('http://localhost:8000/api/chat', {
+        const response = await fetch('http://127.0.0.1:8000/api/chat', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -1106,7 +1106,7 @@ export function analyzeMedicalReport(fileName, textContent, isOfflineMode = fals
         formData.append('file', blob, fileName);
         formData.append('model', selectedModel);
 
-        const response = await fetch('http://localhost:8000/api/upload', {
+        const response = await fetch('http://127.0.0.1:8000/api/upload', {
           method: 'POST',
           body: formData
         });

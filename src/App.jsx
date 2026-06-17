@@ -430,7 +430,7 @@ export default function App() {
                 formData.append('text_hint', privacySettings.voiceLanguage);
               }
 
-              const res = await fetch('http://localhost:8000/api/voice', {
+              const res = await fetch('http://127.0.0.1:8000/api/voice', {
                 method: 'POST',
                 body: formData
               });
@@ -515,7 +515,7 @@ export default function App() {
 
     // Check backend health on startup and periodically
     const checkConnection = () => {
-      fetch('http://localhost:8000/api/health')
+      fetch('http://127.0.0.1:8000/api/health')
         .then(res => {
           if (!res.ok) throw new Error('Unhealthy');
           return res.json();
